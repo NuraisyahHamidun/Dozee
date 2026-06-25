@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary: #10b981;
+    --accent: #f59e0b;
+    --bg-main: #fdfdfd; /* Smoother white */
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+.dark {
+    --bg-main: #0f172a;
+    --glass-bg: rgba(15, 23, 42, 0.9);
+    --glass-border: rgba(255, 255, 255, 0.05);
+}
+ 
+.glass-effect {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+}
+
+body {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background-color: var(--bg-main);
+    color: #334155;
+    @apply transition-colors duration-300;
+}
+
+.heading-font {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Friendly Card Design */
+.premium-card {
+    @apply bg-white dark:bg-slate-800 rounded-[2rem] shadow-md border border-slate-50 dark:border-slate-700/50 overflow-hidden transition-all duration-300 hover:shadow-lg;
+}
+
+/* Soft Gradients */
+.bg-gradient-premium {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #34d399 0%, #60a5fa 100%);
+}
+
+/* Micro-animations */
+.hover-scale {
+    @apply transition-transform duration-200 hover:scale-102;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Form Styles */
+input, select, textarea {
+    @apply rounded-2xl border-slate-100 dark:border-slate-700 dark:bg-slate-900 focus:ring-primary/20 focus:border-primary transition-all duration-200;
+}
+
+/* Pill Buttons */
+.btn-primary {
+    @apply px-8 py-3 bg-primary text-white rounded-full font-bold shadow-soft hover:bg-primary-hover transform active:scale-95 transition-all;
+}
+
+.shadow-soft {
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2);
+}
+
+.text-danger {
+    color: #ef4444;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+
