@@ -19,19 +19,22 @@ Route::get('/', function () {
 })->name('login');
 
 Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth:manager,salesman'])
+    ->middleware(['auth:manager,salesmen'])
     ->name('dashboard');
 
 Route::get('/dashboard/data', [App\Http\Controllers\DashboardController::class, 'getChartData'])
-    ->middleware(['auth:manager,salesman'])
+    ->middleware(['auth:manager,salesmen'])
     ->name('dashboard.data');
 
-Route::middleware('auth:manager,salesman')->group(function () {
+Route::middleware('auth:manager,salesmen')->group(function () {
     Route::resource('sales', App\Http\Controllers\SaleController::class);
+    Route::get('/api/promotions', [App\Http\Controllers\PromotionController::class, 'apiIndex'])->name('api.promotions');
     Route::get('/promotions/{promotion}/bundle-items', [App\Http\Controllers\SaleController::class, 'getBundleItems'])->name('promotions.bundle-items');
     Route::resource('promotions', App\Http\Controllers\PromotionController::class);
-    Route::get('/reports/salesman/{id}', [App\Http\Controllers\ReportController::class, 'salesmanFinanceReport'])->name('reports.salesman');
-    Route::get('/reports/salesman/{id}/export', [App\Http\Controllers\ReportController::class, 'exportSalesmanReport'])->name('reports.salesman.export');
+    Route::get('/reports/salesmen/{id}', [App\Http\Controllers\ReportController::class, 'salesmenFinanceReport'])->name('reports.salesmen');
+    Route::get('/reports/salesman/{id}', [App\Http\Controllers\ReportController::class, 'salesmenFinanceReport'])->name('reports.salesman');
+    Route::get('/reports/salesmen/{id}/export', [App\Http\Controllers\ReportController::class, 'exportSalesmenReport'])->name('reports.salesmen.export');
+    Route::get('/reports/salesman/{id}/export', [App\Http\Controllers\ReportController::class, 'exportSalesmenReport'])->name('reports.salesman.export');
 });
 
 // Manager profile routes
@@ -51,31 +54,30 @@ Route::middleware('auth:manager')->group(function () {
     Route::post('/sales/{sale}/reject', [App\Http\Controllers\SaleController::class, 'reject'])->name('sales.reject');
     
     Route::get('/analysis', [App\Http\Controllers\AnalysisController::class, 'index'])->name('analysis.index');
-    Route::get('/analysis/weka', [App\Http\Controllers\AnalysisController::class, 'wekaIndex'])->name('analysis.weka');
-    Route::post('/analysis/weka/run', [App\Http\Controllers\AnalysisController::class, 'runApriori'])->name('analysis.weka.run');
-    Route::get('/analysis/weka/all-rules', [App\Http\Controllers\AnalysisController::class, 'allRules'])->name('analysis.weka.allRules');
+    Route::post('/promotions/ajax-store', [App\Http\Controllers\PromotionController::class, 'ajaxStore'])->name('promotions.ajax-store');
+
 
     // Reports routes
     Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/sales/export', [App\Http\Controllers\ReportController::class, 'exportSales'])->name('reports.sales.export');
     Route::get('/reports/promotions/export', [App\Http\Controllers\ReportController::class, 'exportPromotions'])->name('reports.promotions.export');
     Route::get('/reports/apriori/export', [App\Http\Controllers\ReportController::class, 'exportApriori'])->name('reports.apriori.export');
-    Route::post('/reports/salesman/{id}/approve-pending', [App\Http\Controllers\ReportController::class, 'approvePendingSales'])->name('reports.salesman.approve-pending');
-    Route::post('/reports/salesman/{id}/approve-selected', [App\Http\Controllers\ReportController::class, 'approveSelectedSales'])->name('reports.salesman.approve-selected');
+    Route::post('/reports/salesmen/{id}/approve-pending', [App\Http\Controllers\ReportController::class, 'approvePendingSales'])->name('reports.salesmen.approve-pending');
+    Route::post('/reports/salesmen/{id}/approve-selected', [App\Http\Controllers\ReportController::class, 'approveSelectedSales'])->name('reports.salesmen.approve-selected');
 });
 
-// Salesman profile routes
-Route::middleware('auth:salesman')->group(function () {
-    Route::get('/salesman/profile', [App\Http\Controllers\SalesmanProfileController::class, 'edit'])->name('salesman.profile.edit');
-    Route::patch('/salesman/profile', [App\Http\Controllers\SalesmanProfileController::class, 'update'])->name('salesman.profile.update');
-    Route::delete('/salesman/profile', [App\Http\Controllers\SalesmanProfileController::class, 'destroy'])->name('salesman.profile.destroy');
+// Salesmen profile routes
+Route::middleware('auth:salesmen')->group(function () {
+    Route::get('/salesmen/profile', [App\Http\Controllers\SalesmenProfileController::class, 'edit'])->name('salesmen.profile.edit');
+    Route::patch('/salesmen/profile', [App\Http\Controllers\SalesmenProfileController::class, 'update'])->name('salesmen.profile.update');
+    Route::delete('/salesmen/profile', [App\Http\Controllers\SalesmenProfileController::class, 'destroy'])->name('salesmen.profile.destroy');
 
     // Staff read-only items catalogue
-    Route::get('/salesman/items', [App\Http\Controllers\SalesmanItemController::class, 'index'])->name('salesman.items.index');
+    Route::get('/salesmen/items', [App\Http\Controllers\SalesmenItemController::class, 'index'])->name('salesmen.items.index');
 
     // Personal sales report routes
-    Route::get('/reports/salesman-personal', [App\Http\Controllers\SalesmanReportController::class, 'index'])->name('reports.salesman_personal.index');
-    Route::get('/reports/salesman-personal/export', [App\Http\Controllers\SalesmanReportController::class, 'export'])->name('reports.salesman_personal.export');
+    Route::get('/reports/salesmen-personal', [App\Http\Controllers\SalesmenReportController::class, 'index'])->name('reports.salesmen_personal.index');
+    Route::get('/reports/salesmen-personal/export', [App\Http\Controllers\SalesmenReportController::class, 'export'])->name('reports.salesmen_personal.export');
 });
 
 require __DIR__.'/auth.php';

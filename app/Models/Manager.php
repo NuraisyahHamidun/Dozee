@@ -38,7 +38,7 @@ class Manager extends Authenticatable
 
     public function salesmen()
     {
-        return $this->hasMany(Salesman::class, 'manager_id');
+        return $this->hasMany(Salesmen::class, 'manager_id');
     }
 
     public function promotions()

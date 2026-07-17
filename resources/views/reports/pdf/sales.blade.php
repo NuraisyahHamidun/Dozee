@@ -25,7 +25,7 @@
             <tr>
                 <th>Date</th>
                 <th>Transaction ID</th>
-                <th>Salesman</th>
+                <th>Salesmen</th>
                 <th class="text-right">Amount (RM)</th>
             </tr>
         </thead>
@@ -34,7 +34,7 @@
             <tr>
                 <td>{{ $sale->sale_date }}</td>
                 <td>TXN-{{ str_pad($sale->transaction_id, 6, '0', STR_PAD_LEFT) }}</td>
-                <td>{{ $sale->salesman->name ?? 'N/A' }}</td>
+                <td>{{ $sale->salesmen->name ?? 'N/A' }}</td>
                 <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
             </tr>
             @endforeach

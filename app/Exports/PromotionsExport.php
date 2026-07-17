@@ -54,7 +54,7 @@ class PromotionsExport implements FromCollection, WithHeadings, WithMapping, Wit
             'Status',
             'Start Date',
             'End Date',
-            'Discount Amount (RM)',
+            'Discount (%)',
             'Total Sales (Qty)',
             'Total Revenue (RM)'
         ];
@@ -79,7 +79,7 @@ class PromotionsExport implements FromCollection, WithHeadings, WithMapping, Wit
             $promo->status,
             $promo->start_date,
             $promo->end_date,
-            (float) $promo->discount_amount,
+            ($promo->final_discount ?? 10) . '%',
             (int) $salesCount,
             (float) $rev
         ];

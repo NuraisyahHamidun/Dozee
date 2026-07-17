@@ -8,7 +8,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-6" x-data="{ tab: 'sales' }">
+    <div class="py-6" x-data="{ tab: '{{ request()->get('tab', 'sales') }}' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Tabs Navigation -->
@@ -180,6 +180,11 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($promotions->hasPages())
+                            <div class="mt-6 px-8 py-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                {{ $promotions->links() }}
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -215,7 +220,7 @@
                                         <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Support</th>
                                         <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Confidence</th>
                                         <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Lift</th>
-                                        <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+                                        <th class="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Recommendation</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
@@ -234,6 +239,18 @@
                                         }
                                         $p2 = \App\Models\Product::find($rule->consequent);
                                         $consequentName = $p2 ? ($p2->item_code ? $p2->item_code . ' (' . $p2->item_name . ')' : $p2->item_name) : $rule->consequent;
+
+                                        // Determine recommendation
+                                        if ($rule->confidence >= 0.8) {
+                                            $recommendation = 'Strong Bundle Potential';
+                                            $badgeClass = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+                                        } elseif ($rule->lift >= 1.5) {
+                                            $recommendation = 'Suitable for Combo Promotion';
+                                            $badgeClass = 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
+                                        } else {
+                                            $recommendation = 'High Customer Association';
+                                            $badgeClass = 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400';
+                                        }
                                     @endphp
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td class="px-4 py-3 whitespace-nowrap">
@@ -253,15 +270,20 @@
                                             {{ number_format($rule->lift, 2) }}x
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-right">
-                                            <a href="{{ route('promotions.create', ['rule_id' => $rule->rule_id]) }}" class="inline-flex items-center px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 hover:text-white transition-colors">
-                                                Create Promo
-                                            </a>
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider {{ $badgeClass }}">
+                                                {{ $recommendation }}
+                                            </span>
                                         </td>
                                     </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
+                        @if($aprioriRules->hasPages())
+                            <div class="mt-6 px-8 py-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                                {{ $aprioriRules->links() }}
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>

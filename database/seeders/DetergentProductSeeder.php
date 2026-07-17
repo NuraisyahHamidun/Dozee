@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Sale;
@@ -36,8 +36,8 @@ class DetergentProductSeeder extends Seeder
             ]
         );
 
-        // 3. Ensure test salesman exists with requested password
-        $salesman = Salesman::updateOrCreate(
+        // 3. Ensure test salesmen exists with requested password
+        $salesmen = Salesmen::updateOrCreate(
             ['email' => 'ariff@dozee.com'],
             [
                 'manager_id' => $manager->manager_id,
@@ -46,7 +46,7 @@ class DetergentProductSeeder extends Seeder
                 'password' => Hash::make('Ariff@1234'),
                 'address' => '22 Jalan Suria',
                 'phone_number' => '011-2312456',
-                'staff_code' => Salesman::generateUniqueStaffCode(),
+                'staff_code' => Salesmen::generateUniqueStaffCode(),
             ]
         );
 
@@ -112,11 +112,11 @@ class DetergentProductSeeder extends Seeder
         for ($i = 0; $i < 15; $i++) {
             $date = Carbon::now()->subMonths(rand(0, 5))->subDays(rand(0, 27));
             $sale = Sale::create([
-                'salesman_id' => $salesman->salesman_id,
+                'salesmen_id' => $salesmen->salesmen_id,
                 'total_amount' => 0,
                 'sale_date' => $date,
                 'status' => 'Approved',
-                'ante_create' => $date,
+                'date_create' => $date,
                 'date_verify' => $date->copy()->addMinutes(rand(10, 60)),
             ]);
 

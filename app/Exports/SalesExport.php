@@ -27,7 +27,7 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, WithStyl
 
     public function collection()
     {
-        return Sale::with(['salesman'])
+        return Sale::with(['salesmen'])
             ->whereBetween('sale_date', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
             ->orderBy('sale_date', 'desc')
             ->get();
@@ -38,7 +38,7 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         return [
             'Transaction ID',
             'Date',
-            'Salesman',
+            'Salesmen',
             'Amount (RM)',
             'Payment Method'
         ];
@@ -49,7 +49,7 @@ class SalesExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         return [
             'TXN-' . str_pad($sale->transaction_id, 6, '0', STR_PAD_LEFT),
             $sale->sale_date,
-            $sale->salesman->name ?? 'N/A',
+            $sale->salesmen->name ?? 'N/A',
             (float) $sale->total_amount,
             $sale->payment_method
         ];

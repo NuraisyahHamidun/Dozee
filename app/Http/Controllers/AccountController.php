@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -41,7 +41,7 @@ class AccountController extends Controller
             $username = $baseUsername;
             $count = 1;
 
-            while (\App\Models\Manager::where('username', $username)->exists() || \App\Models\Salesman::where('username', $username)->exists()) {
+            while (\App\Models\Manager::where('username', $username)->exists() || \App\Models\Salesmen::where('username', $username)->exists()) {
                 $username = $baseUsername . $count;
                 $count++;
             }
@@ -54,12 +54,12 @@ class AccountController extends Controller
             'username' => [
                 'required', 'string', 'lowercase', 'max:255',
                 Rule::unique('manager', 'username'),
-                Rule::unique('salesman', 'username'),
+                Rule::unique('salesmen', 'username'),
             ],
             'email'    => [
                 'required', 'string', 'lowercase', 'email', 'max:255',
                 Rule::unique('manager', 'email'),
-                Rule::unique('salesman', 'email'),
+                Rule::unique('salesmen', 'email'),
             ],
             'password' => [
                 'required', 'string', 'min:8',
@@ -73,17 +73,17 @@ class AccountController extends Controller
 
         $manager = Auth::guard('manager')->user();
 
-        $salesman = $manager->salesmen()->create([
+        $salesmen = $manager->salesmen()->create([
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'address' => $request->address,
-            'staff_code' => Salesman::generateUniqueStaffCode(),
+            'staff_code' => Salesmen::generateUniqueStaffCode(),
         ]);
 
-        return redirect()->route('accounts.index')->with('success', 'Salesman account created successfully.');
+        return redirect()->route('accounts.index')->with('success', 'Salesmen account created successfully.');
     }
 
     public function edit($id)
@@ -93,9 +93,9 @@ class AccountController extends Controller
         }
 
         $manager = Auth::guard('manager')->user();
-        $salesman = $manager->salesmen()->findOrFail($id);
+        $salesmen = $manager->salesmen()->findOrFail($id);
 
-        return view('accounts.edit', compact('salesman'));
+        return view('accounts.edit', compact('salesmen'));
     }
 
     public function update(Request $request, $id)
@@ -105,23 +105,23 @@ class AccountController extends Controller
         }
 
         $manager = Auth::guard('manager')->user();
-        $salesman = $manager->salesmen()->findOrFail($id);
+        $salesmen = $manager->salesmen()->findOrFail($id);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => [
                 'required', 'string', 'lowercase', 'max:255',
                 Rule::unique('manager', 'username'),
-                Rule::unique('salesman', 'username')->ignore($salesman->salesman_id, 'salesman_id'),
+                Rule::unique('salesmen', 'username')->ignore($salesmen->salesmen_id, 'salesmen_id'),
             ],
         ]);
 
-        $salesman->update([
+        $salesmen->update([
             'name' => $request->name,
             'username' => $request->username,
         ]);
 
-        return redirect()->back()->with('success', 'Staff profile updated successfully.');
+        return redirect()->back()->with('success', 'Salesmen profile updated successfully.');
     }
 
     public function destroy($id)
@@ -131,9 +131,9 @@ class AccountController extends Controller
         }
 
         $manager = Auth::guard('manager')->user();
-        $salesman = $manager->salesmen()->findOrFail($id);
-        $salesman->delete();
+        $salesmen = $manager->salesmen()->findOrFail($id);
+        $salesmen->delete();
 
-        return redirect()->route('accounts.index')->with('success', 'Salesman account deleted successfully.');
+        return redirect()->route('accounts.index')->with('success', 'Salesmen account deleted successfully.');
     }
 }

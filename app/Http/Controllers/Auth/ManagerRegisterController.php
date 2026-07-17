@@ -36,7 +36,7 @@ class ManagerRegisterController extends Controller
             $username = $baseUsername;
             $count = 1;
 
-            while (\App\Models\Manager::where('username', $username)->exists() || \App\Models\Salesman::where('username', $username)->exists()) {
+            while (\App\Models\Manager::where('username', $username)->exists() || \App\Models\Salesmen::where('username', $username)->exists()) {
                 $username = $baseUsername . $count;
                 $count++;
             }
@@ -49,12 +49,12 @@ class ManagerRegisterController extends Controller
             'username' => [
                 'required', 'string', 'lowercase', 'max:255',
                 Rule::unique('manager', 'username'),
-                Rule::unique('salesman', 'username'),
+                Rule::unique('salesmen', 'username'),
             ],
             'email'    => [
                 'required', 'string', 'lowercase', 'email', 'max:255',
                 Rule::unique('manager', 'email'),
-                Rule::unique('salesman', 'email'),
+                Rule::unique('salesmen', 'email'),
             ],
             'password' => [
                 'required', 'string', 'min:8',

@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 use App\Models\Sale;
 use App\Models\Promotion;
 use App\Models\AprioriAnalysis;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Exports\SalesExport;
 use App\Exports\PromotionsExport;
 use App\Exports\AprioriExport;
-use App\Exports\SalesmanFinanceExport;
+use App\Exports\SalesmenFinanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -25,7 +25,7 @@ class ReportController extends Controller
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
         // 1. Sales Data
-        $salesQuery = Sale::with(['salesman', 'saleItems.product'])
+        $salesQuery = Sale::with(['salesmen', 'saleItems.product'])
             ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
         $totalSalesRevenue = (clone $salesQuery)->sum('total_amount');
         $totalSalesCount = (clone $salesQuery)->count();
@@ -45,7 +45,12 @@ class ReportController extends Controller
                      ->where('end_date', '>=', $endDate);
               });
         });
-        $promotions = $promotionsQuery->get();
+        $promotions = $promotionsQuery->paginate(10, ['*'], 'promo_page')->appends([
+            'tab' => 'promotions',
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'promo_status' => $promoStatus,
+        ]);
 
         // Promotion Revenue calculation
         $promoRevenue = [];
@@ -67,16 +72,16 @@ class ReportController extends Controller
         // 3. Apriori Data
         // AprioriAnalysis doesn't have a date by default in many implementations, 
         // but we'll fetch the rules and possibly filter if there's a timestamp.
-        $aprioriRules = AprioriAnalysis::orderBy('support', 'desc')->take(20)->get();
+        $aprioriRules = AprioriAnalysis::orderBy('support', 'desc')->paginate(10, ['*'], 'apriori_page')->appends(['tab' => 'apriori']);
 
         // 4. Salesmen Data
-        $salesmen = Salesman::orderBy('name', 'asc')->get();
+        $salesmen = Salesmen::orderBy('name', 'asc')->get();
 
-        // 5. Pending sale counts per salesman (for the Approve badge)
+        // 5. Pending sale counts per salesmen (for the Approve badge)
         $pendingCounts = Sale::where('status', 'Pending')
-            ->selectRaw('salesman_id, COUNT(*) as cnt')
-            ->groupBy('salesman_id')
-            ->pluck('cnt', 'salesman_id');
+            ->selectRaw('salesmen_id, COUNT(*) as cnt')
+            ->groupBy('salesmen_id')
+            ->pluck('cnt', 'salesmen_id');
 
         return view('reports.index', compact(
             'startDate', 'endDate', 'promoStatus',
@@ -93,7 +98,7 @@ class ReportController extends Controller
         $format = $request->get('format', 'excel');
 
         if ($format === 'pdf') {
-            $sales = Sale::with(['salesman', 'saleItems.product'])
+            $sales = Sale::with(['salesmen', 'saleItems.product'])
                 ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                 ->orderBy('sale_date', 'desc')->get();
             $totalSalesRevenue = $sales->sum('total_amount');
@@ -161,18 +166,18 @@ class ReportController extends Controller
         return Excel::download(new AprioriExport(), 'market_basket_analysis_report.xlsx');
     }
 
-    public function salesmanFinanceReport(Request $request, $salesman_id)
+    public function salesmenFinanceReport(Request $request, $salesmen_id)
     {
-        $user = Auth::guard('manager')->user() ?? Auth::guard('salesman')->user();
+        $user = Auth::guard('manager')->user() ?? Auth::guard('salesmen')->user();
         if (!$user) {
             abort(403, 'Unauthorized action.');
         }
 
-        if (Auth::guard('salesman')->check() && Auth::guard('salesman')->user()->salesman_id != $salesman_id) {
+        if (Auth::guard('salesmen')->check() && Auth::guard('salesmen')->user()->salesmen_id != $salesmen_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        $salesman = Salesman::findOrFail($salesman_id);
+        $salesmen = Salesmen::findOrFail($salesmen_id);
 
         $startDate = $request->get('start_date', now()->subMonths(3)->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
@@ -180,9 +185,9 @@ class ReportController extends Controller
         $eventName = $request->get('event_name', '');
         $isManager = Auth::guard('manager')->check();
 
-        $query = SaleItem::with(['sale.salesman', 'product', 'promotion'])
-            ->whereHas('sale', function($q) use ($salesman_id, $startDate, $endDate, $eventName) {
-                $q->where('salesman_id', $salesman_id)
+        $query = SaleItem::with(['sale.salesmen', 'product', 'promotion'])
+            ->whereHas('sale', function($q) use ($salesmen_id, $startDate, $endDate, $eventName) {
+                $q->where('salesmen_id', $salesmen_id)
                   ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
                 if ($eventName) {
                     $q->where('event_name', 'like', '%' . $eventName . '%');
@@ -213,40 +218,41 @@ class ReportController extends Controller
 
         // Load all sales (transactions) for bulk approval / list table
         $salesQuery = Sale::with(['saleItems.product'])
-            ->where('salesman_id', $salesman_id)
+            ->where('salesmen_id', $salesmen_id)
             ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($eventName) {
             $salesQuery->where('event_name', 'like', '%' . $eventName . '%');
         }
 
-        $sales = $salesQuery->orderBy('sale_date', 'desc')->get();
+        $sales = $salesQuery->orderBy('sale_date', 'desc')->paginate(5)->withQueryString();
 
         if ($request->ajax()) {
             return response()->json([
                 'html' => view('reports.partials.sales-table', compact('sales', 'isManager'))->render(),
+                'pagination' => $sales->hasPages() ? $sales->links()->render() : '',
                 'totalQuantity' => $totalQuantity,
                 'totalPrice' => number_format($totalPrice, 2),
                 'totalSaleAmount' => number_format($totalSaleAmount, 2),
             ]);
         }
 
-        return view('reports.salesman-finance', compact(
-            'salesman', 'startDate', 'endDate', 'promoId', 'eventName',
+        return view('reports.salesmen-finance', compact(
+            'salesmen', 'startDate', 'endDate', 'promoId', 'eventName',
             'saleItems', 'totalQuantity', 'totalPrice', 'totalSaleAmount', 'promotions', 'sales', 'isManager'
         ));
     }
 
     /**
-     * Bulk-approve selected sales for a given salesman.
+     * Bulk-approve selected sales for a given salesmen.
      */
-    public function approveSelectedSales(Request $request, $salesman_id)
+    public function approveSelectedSales(Request $request, $salesmen_id)
     {
         if (!Auth::guard('manager')->check()) {
             abort(403, 'Only managers can approve sales.');
         }
 
-        $salesman = Salesman::findOrFail($salesman_id);
+        $salesmen = Salesmen::findOrFail($salesmen_id);
 
         $request->validate([
             'sale_ids' => 'required|array',
@@ -254,9 +260,9 @@ class ReportController extends Controller
         ]);
 
         $count = 0;
-        DB::transaction(function () use ($request, $salesman_id, &$count) {
+        DB::transaction(function () use ($request, $salesmen_id, &$count) {
             $count = Sale::whereIn('transaction_id', $request->sale_ids)
-                ->where('salesman_id', $salesman_id)
+                ->where('salesmen_id', $salesmen_id)
                 ->where('status', 'Pending')
                 ->update([
                     'status' => 'Approved',
@@ -272,18 +278,18 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportSalesmanReport(Request $request, $salesman_id)
+    public function exportSalesmenReport(Request $request, $salesmen_id)
     {
-        $user = Auth::guard('manager')->user() ?? Auth::guard('salesman')->user();
+        $user = Auth::guard('manager')->user() ?? Auth::guard('salesmen')->user();
         if (!$user) {
             abort(403, 'Unauthorized action.');
         }
 
-        if (Auth::guard('salesman')->check() && Auth::guard('salesman')->user()->salesman_id != $salesman_id) {
+        if (Auth::guard('salesmen')->check() && Auth::guard('salesmen')->user()->salesmen_id != $salesmen_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        $salesman = Salesman::findOrFail($salesman_id);
+        $salesmen = Salesmen::findOrFail($salesmen_id);
 
         $startDate = $request->get('start_date', now()->subMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
@@ -291,9 +297,9 @@ class ReportController extends Controller
         $format = $request->get('format', 'excel');
 
         if ($format === 'pdf') {
-            $query = SaleItem::with(['sale.salesman', 'product', 'promotion'])
-                ->whereHas('sale', function($q) use ($salesman_id, $startDate, $endDate) {
-                    $q->where('salesman_id', $salesman_id)
+            $query = SaleItem::with(['sale.salesmen', 'product', 'promotion'])
+                ->whereHas('sale', function($q) use ($salesmen_id, $startDate, $endDate) {
+                    $q->where('salesmen_id', $salesmen_id)
                       ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
                 });
 
@@ -314,45 +320,45 @@ class ReportController extends Controller
             $transactionIds = $saleItems->pluck('transaction_id')->unique();
             $totalSaleAmount = Sale::whereIn('transaction_id', $transactionIds)->sum('total_amount');
 
-            $pdf = Pdf::loadView('reports.pdf.salesman-finance', compact(
-                'salesman', 'saleItems', 'startDate', 'endDate', 'promoId',
+            $pdf = Pdf::loadView('reports.pdf.salesmen-finance', compact(
+                'salesmen', 'saleItems', 'startDate', 'endDate', 'promoId',
                 'totalQuantity', 'totalPrice', 'totalSaleAmount'
             ));
-            return $pdf->download('salesman_report_'.$salesman->username.'_'.$startDate.'_to_'.$endDate.'.pdf');
+            return $pdf->download('salesmen_report_'.$salesmen->username.'_'.$startDate.'_to_'.$endDate.'.pdf');
         }
 
         return Excel::download(
-            new SalesmanFinanceExport($salesman_id, $startDate, $endDate, $promoId),
-            'salesman_report_'.$salesman->username.'_'.$startDate.'_to_'.$endDate.'.xlsx'
+            new SalesmenFinanceExport($salesmen_id, $startDate, $endDate, $promoId),
+            'salesmen_report_'.$salesmen->username.'_'.$startDate.'_to_'.$endDate.'.xlsx'
         );
     }
 
     /**
-     * Bulk-approve all Pending sales for a given salesman.
+     * Bulk-approve all Pending sales for a given salesmen.
      * Manager-only action (enforced by route middleware + explicit check here).
      */
-    public function approvePendingSales(Request $request, $salesman_id)
+    public function approvePendingSales(Request $request, $salesmen_id)
     {
         if (!Auth::guard('manager')->check()) {
             abort(403, 'Only managers can approve sales.');
         }
 
-        $salesman = Salesman::findOrFail($salesman_id);
+        $salesmen = Salesmen::findOrFail($salesmen_id);
 
-        $pendingSales = Sale::where('salesman_id', $salesman_id)
+        $pendingSales = Sale::where('salesmen_id', $salesmen_id)
             ->where('status', 'Pending')
             ->get();
 
         if ($pendingSales->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No pending sales found for ' . $salesman->name . '.',
+                'message' => 'No pending sales found for ' . $salesmen->name . '.',
             ]);
         }
 
         $count = 0;
-        DB::transaction(function () use ($salesman_id, &$count) {
-            $count = Sale::where('salesman_id', $salesman_id)
+        DB::transaction(function () use ($salesmen_id, &$count) {
+            $count = Sale::where('salesmen_id', $salesmen_id)
                 ->where('status', 'Pending')
                 ->update([
                     'status'      => 'Approved',
@@ -363,7 +369,7 @@ class ReportController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $count . ' pending sale(s) for ' . $salesman->name . ' approved successfully.',
+            'message' => $count . ' pending sale(s) for ' . $salesmen->name . ' approved successfully.',
             'approved_count' => $count,
         ]);
     }

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Hash;
@@ -15,12 +15,12 @@ beforeEach(function () {
         'password' => Hash::make('password'),
     ]);
 
-    // Set up a salesman
-    $this->salesman = Salesman::create([
+    // Set up a salesmen
+    $this->salesmen = Salesmen::create([
         'manager_id' => $this->manager->manager_id,
-        'name' => 'Salesman Test',
+        'name' => 'Salesmen Test',
         'username' => 'salestest',
-        'email' => 'salesman@test.com',
+        'email' => 'salesmen@test.com',
         'password' => Hash::make('password'),
     ]);
 
@@ -34,11 +34,11 @@ beforeEach(function () {
     ]);
 });
 
-test('salesman can create a sale with pending status and ante_create populated', function () {
-    $response = $this->actingAs($this->salesman, 'salesman')
+test('salesmen can create a sale with pending status and date_create populated', function () {
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->post(route('sales.store'), [
             'event_name' => 'Test Event',
-            'sale_date' => now()->format('Y-m-d H:i:s'),
+            'sale_date' => now()->setHour(12)->setMinute(0)->format('Y-m-d H:i:s'),
             'items' => [
                 [
                     'product_id' => $this->product->item_id,
@@ -50,22 +50,22 @@ test('salesman can create a sale with pending status and ante_create populated',
 
     $response->assertRedirect(route('sales.index'));
     $this->assertDatabaseHas('sales_transaction', [
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Test Event',
         'status' => 'Pending',
     ]);
 
     $sale = Sale::first();
     expect($sale->status)->toBe('Pending');
-    expect($sale->ante_create)->not->toBeNull();
+    expect($sale->date_create)->not->toBeNull();
     expect($sale->date_modifier)->toBeNull();
     expect($sale->date_verify)->toBeNull();
 });
 
-test('salesman cannot edit a pending sale', function () {
+test('salesmen cannot edit a pending sale', function () {
     // Create a pending sale
     $sale = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event A',
         'total_amount' => 10.00,
         'sale_date' => now(),
@@ -73,14 +73,14 @@ test('salesman cannot edit a pending sale', function () {
     ]);
 
     // Try to view edit page
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->get(route('sales.edit', $sale));
 
     $response->assertRedirect(route('sales.index'));
     $response->assertSessionHas('error', 'You cannot edit this sale until it is approved by a Manager.');
 
     // Try to update sale
-    $responseUpdate = $this->actingAs($this->salesman, 'salesman')
+    $responseUpdate = $this->actingAs($this->salesmen, 'salesmen')
         ->put(route('sales.update', $sale), [
             'event_name' => 'Updated Event',
             'items' => [
@@ -99,7 +99,7 @@ test('salesman cannot edit a pending sale', function () {
 test('manager can approve sale and verification timestamp is set', function () {
     // Create pending sale
     $sale = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event A',
         'total_amount' => 10.00,
         'sale_date' => now(),
@@ -118,10 +118,10 @@ test('manager can approve sale and verification timestamp is set', function () {
     expect($sale->date_verify)->not->toBeNull();
 });
 
-test('salesman can edit approved sale and modification timestamp updates', function () {
+test('salesmen can edit approved sale and modification timestamp updates', function () {
     // Create approved sale
     $sale = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event A',
         'total_amount' => 10.00,
         'sale_date' => now(),
@@ -134,8 +134,8 @@ test('salesman can edit approved sale and modification timestamp updates', funct
         'quantity' => 1,
     ]);
 
-    // Edit as salesman
-    $response = $this->actingAs($this->salesman, 'salesman')
+    // Edit as salesmen
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->put(route('sales.update', $sale), [
             'event_name' => 'Modified Event Name',
             'items' => [
@@ -161,7 +161,7 @@ test('manager can reject sale and items return to stock', function () {
 
     // Create pending sale
     $sale = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event A',
         'total_amount' => 10.00,
         'sale_date' => now(),
@@ -189,15 +189,15 @@ test('manager can reject sale and items return to stock', function () {
     expect($this->product->stock_qty)->toBe($initialStock + 5);
 });
 
-test('salesman can view dashboard and get chart data', function () {
+test('salesmen can view dashboard and get chart data', function () {
     // Access dashboard view
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->get(route('dashboard'));
 
     $response->assertOk();
 
     // Access dashboard data API
-    $apiResponse = $this->actingAs($this->salesman, 'salesman')
+    $apiResponse = $this->actingAs($this->salesmen, 'salesmen')
         ->get(route('dashboard.data', [
             'start_date' => now()->subDays(30)->format('Y-m-d'),
             'end_date' => now()->format('Y-m-d'),
@@ -210,23 +210,23 @@ test('salesman can view dashboard and get chart data', function () {
 });
 
 test('manager can bulk approve selected sales', function () {
-    // Create pending sales for the salesman
+    // Create pending sales for the salesmen
     $sale1 = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event X',
         'total_amount' => 10.00,
         'sale_date' => now(),
         'status' => 'Pending',
     ]);
     $sale2 = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event Y',
         'total_amount' => 20.00,
         'sale_date' => now(),
         'status' => 'Pending',
     ]);
     $sale3 = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event Z',
         'total_amount' => 30.00,
         'sale_date' => now(),
@@ -235,7 +235,7 @@ test('manager can bulk approve selected sales', function () {
 
     // Approve selected $sale1 and $sale2
     $response = $this->actingAs($this->manager, 'manager')
-        ->post(route('reports.salesman.approve-selected', ['id' => $this->salesman->salesman_id]), [
+        ->post(route('reports.salesmen.approve-selected', ['id' => $this->salesmen->salesmen_id]), [
             'sale_ids' => [$sale1->transaction_id, $sale2->transaction_id]
         ]);
 
@@ -259,15 +259,15 @@ test('manager can bulk approve selected sales', function () {
 
 test('non-managers cannot bulk approve sales', function () {
     $sale = Sale::create([
-        'salesman_id' => $this->salesman->salesman_id,
+        'salesmen_id' => $this->salesmen->salesmen_id,
         'event_name' => 'Event X',
         'total_amount' => 10.00,
         'sale_date' => now(),
         'status' => 'Pending',
     ]);
 
-    $response = $this->actingAs($this->salesman, 'salesman')
-        ->post(route('reports.salesman.approve-selected', ['id' => $this->salesman->salesman_id]), [
+    $response = $this->actingAs($this->salesmen, 'salesmen')
+        ->post(route('reports.salesmen.approve-selected', ['id' => $this->salesmen->salesmen_id]), [
             'sale_ids' => [$sale->transaction_id]
         ]);
 

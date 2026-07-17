@@ -15,13 +15,17 @@ class Promotion extends Model
     
     protected $fillable = [
         'manager_id', 
-        'salesman_id',
+        'salesmen_id',
         'rule_id', 
         'promo_name', 
         'description', 
         'start_date', 
         'end_date', 
-        'status'
+        'status',
+        'final_discount',
+        'discount_type',
+        'discount_value',
+        'discount_apply_to'
     ];
     public function getStatusAttribute($value)
     {
@@ -37,9 +41,9 @@ class Promotion extends Model
         return $this->belongsTo(Manager::class, 'manager_id', 'manager_id');
     }
 
-    public function salesman()
+    public function salesmen()
     {
-        return $this->belongsTo(Salesman::class, 'salesman_id', 'salesman_id');
+        return $this->belongsTo(Salesmen::class, 'salesmen_id', 'salesmen_id');
     }
 
     public function analysis()
@@ -64,6 +68,72 @@ class Promotion extends Model
             $productIds->push($rule->consequent);
         }
         return \App\Models\Product::whereIn('item_id', $productIds->unique()->filter())->get();
+    }
+
+    public static function syncFromAprioriRules()
+    {
+        $rules = \App\Models\AprioriAnalysis::where('confidence', '>=', 0.8)
+            ->where('lift', '>', 1)
+            ->get();
+
+        foreach ($rules as $rule) {
+            $antecedents = $rule->antecedentIds();
+            $consequent = $rule->consequent;
+
+            $anteProducts = \App\Models\Product::whereIn('item_id', $antecedents)->get();
+            $consProduct = \App\Models\Product::find($consequent);
+
+            if (!$consProduct || $anteProducts->isEmpty()) {
+                continue;
+            }
+
+            $anteCodes = $anteProducts->pluck('item_code')->sort()->implode('+');
+            $consCode = $consProduct->item_code;
+
+            $promoName = "AI Bundle: " . $anteCodes . " → " . $consCode;
+
+            // Check if this promotion already exists
+            $exists = self::where('promo_name', $promoName)
+                ->whereIn('status', ['Active', 'Pending'])
+                ->exists();
+
+            if (!$exists) {
+                $description = "AI-generated bundle promotion based on Apriori association rule: " . $rule->rule_text . " (Confidence: " . ($rule->confidence * 100) . "%, Lift: " . $rule->lift . ").";
+                
+                $promotion = self::create([
+                    'rule_id' => $rule->rule_id,
+                    'promo_name' => $promoName,
+                    'description' => $description,
+                    'start_date' => now()->toDateString(),
+                    'end_date' => now()->addDays(30)->toDateString(),
+                    'status' => 'Active',
+                ]);
+
+                \Illuminate\Support\Facades\DB::table('promotion_association_rule')->insert([
+                    'promotion_id' => $promotion->promo_id,
+                    'rule_id' => $rule->rule_id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $existingPromo = self::where('promo_name', $promoName)
+                    ->whereIn('status', ['Active', 'Pending'])
+                    ->first();
+                if ($existingPromo) {
+                    $existingPromo->update(['rule_id' => $rule->rule_id]);
+                    
+                    \Illuminate\Support\Facades\DB::table('promotion_association_rule')
+                        ->where('promotion_id', $existingPromo->promo_id)
+                        ->delete();
+                    \Illuminate\Support\Facades\DB::table('promotion_association_rule')->insert([
+                        'promotion_id' => $existingPromo->promo_id,
+                        'rule_id' => $rule->rule_id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
     }
 }
 

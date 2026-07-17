@@ -1,4 +1,29 @@
 <x-app-layout>
+    @php
+        $bundleItems = $sale->saleItems->whereNotNull('promo_id')->groupBy('promo_id');
+        $singleItems = $sale->saleItems->whereNull('promo_id');
+        
+        // Calculate gross total (original price sum before discount)
+        $grossTotal = 0;
+        foreach($sale->saleItems as $item) {
+            $grossTotal += $item->product->price * $item->quantity;
+        }
+        
+        // Subtotal (the actual discounted price sum)
+        $subtotal = 0;
+        foreach($sale->saleItems as $item) {
+            if ($item->promo_id && $item->promotion) {
+                $discountPercent = $item->promotion->final_discount ?? 10;
+                $discountedPrice = $item->product->price * (1 - ($discountPercent / 100));
+                $subtotal += $discountedPrice * $item->quantity;
+            } else {
+                $subtotal += $item->product->price * $item->quantity;
+            }
+        }
+        
+        $tax = $subtotal * 0.06;
+        $totalPayable = $subtotal + $tax;
+    @endphp
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <h2 class="font-bold text-2xl text-slate-800 dark:text-white leading-tight flex items-center gap-3">
@@ -46,11 +71,11 @@
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block text-left md:text-right">Issued By</span>
                             <div class="flex items-center md:justify-end gap-3">
                                 <div class="text-left md:text-right">
-                                    <p class="text-sm font-black text-slate-800 dark:text-white uppercase">{{ $sale->salesman->name }}</p>
+                                    <p class="text-sm font-black text-slate-800 dark:text-white uppercase">{{ $sale->salesmen->name }}</p>
                                     <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Sales Personnel</p>
                                 </div>
                                 <div class="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold">
-                                    {{ substr($sale->salesman->name, 0, 1) }}
+                                    {{ substr($sale->salesmen->name, 0, 1) }}
                                 </div>
                             </div>
                         </div>
@@ -75,9 +100,9 @@
                             @endif
                         </div>
                         <div>
-                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ante Create</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date Create</span>
                             <span class="text-xs font-bold text-slate-700 dark:text-slate-200 block">
-                                {{ $sale->ante_create ? $sale->ante_create->format('d M Y, H:i A') : '-' }}
+                                {{ $sale->date_create ? $sale->date_create->format('d M Y, H:i A') : '-' }}
                             </span>
                         </div>
                         <div>
@@ -98,49 +123,182 @@
                     <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Order Breakdown</h4>
                     
                     <!-- Mobile Card View for Items -->
-                    <div class="space-y-4 md:hidden mb-8">
-                        @foreach($sale->saleItems as $item)
-                            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p class="text-sm font-black text-slate-800 dark:text-white uppercase">{{ $item->product->item_name }}</p>
-                                        <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">{{ $item->product->category->category_name ?? 'Item' }}</p>
-                                    </div>
-                                    <span class="text-xs font-black text-indigo-600">x{{ $item->quantity }}</span>
-                                </div>
-                                <div class="flex justify-between items-end pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase">RM{{ number_format($item->product->price, 2) }} / unit</span>
-                                    <span class="text-sm font-black text-slate-800 dark:text-white">RM{{ number_format($item->product->price * $item->quantity, 2) }}</span>
+                    <div class="space-y-6 md:hidden mb-8">
+                        @if($bundleItems->count() > 0)
+                            <div>
+                                <h5 class="text-[10px] font-black uppercase tracking-wider text-violet-750 mb-3 block">Selected Bundles</h5>
+                                <div class="space-y-4">
+                                    @foreach($bundleItems as $promoId => $items)
+                                        @php
+                                            $promo = $items->first()->promotion;
+                                            $promoName = $promo ? $promo->promo_name : 'Bundle Promotion';
+                                            $discountPercent = $promo ? ($promo->final_discount ?? 10) : 10;
+                                        @endphp
+                                        <div class="bg-violet-50/10 border border-violet-100 rounded-2xl p-4">
+                                            <div class="flex items-center justify-between mb-3 pb-1.5 border-b border-violet-100">
+                                                <span class="text-[10px] font-black text-violet-850 uppercase">{{ $promoName }}</span>
+                                                <span class="px-1.5 py-0.5 bg-violet-100 text-violet-700 text-[8px] font-black uppercase rounded">{{ $discountPercent }}% OFF</span>
+                                            </div>
+                                            <div class="space-y-3">
+                                                @foreach($items as $item)
+                                                    @php
+                                                        $discountedPrice = $item->product->price * (1 - ($discountPercent / 100));
+                                                        $amount = $discountedPrice * $item->quantity;
+                                                    @endphp
+                                                    <div class="flex justify-between items-start">
+                                                        <div>
+                                                            <p class="text-xs font-black text-slate-800 uppercase leading-none mb-1">{{ $item->product->item_name }}</p>
+                                                            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{{ $item->product->category->category_name ?? 'General' }}</p>
+                                                        </div>
+                                                        <span class="text-xs font-black text-indigo-650">x{{ $item->quantity }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between items-end pt-2 border-t border-dashed border-slate-100">
+                                                        <span class="text-[9px] text-slate-400 font-bold uppercase">
+                                                            <span class="line-through">RM{{ number_format($item->product->price, 2) }}</span>
+                                                            <span class="text-violet-650 ml-1">RM{{ number_format($discountedPrice, 2) }}</span>
+                                                        </span>
+                                                        <span class="text-xs font-black text-slate-800">RM{{ number_format($amount, 2) }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
-                        @endforeach
+                        @endif
+
+                        @if($singleItems->count() > 0)
+                            <div>
+                                <h5 class="text-[10px] font-black uppercase tracking-wider text-slate-650 mb-3 block">Additional Single Items</h5>
+                                <div class="space-y-3">
+                                    @foreach($singleItems as $item)
+                                        @php
+                                            $amount = $item->product->price * $item->quantity;
+                                        @endphp
+                                        <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <p class="text-xs font-black text-slate-800 dark:text-white uppercase leading-none mb-1">{{ $item->product->item_name }}</p>
+                                                    <p class="text-[8px] text-slate-400 font-bold tracking-widest uppercase">{{ $item->product->category->category_name ?? 'Item' }}</p>
+                                                </div>
+                                                <span class="text-xs font-black text-indigo-600">x{{ $item->quantity }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-end pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <span class="text-[9px] text-slate-400 font-bold uppercase">RM{{ number_format($item->product->price, 2) }} / unit</span>
+                                                <span class="text-xs font-black text-slate-800 dark:text-white">RM{{ number_format($amount, 2) }}</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
-                    <!-- Desktop Table View for Items -->
+                    <!-- Desktop View for Items -->
                     <div class="hidden md:block overflow-hidden mb-12">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700/50">
-                                    <th class="text-left pb-4">Description</th>
-                                    <th class="text-center pb-4">Rate</th>
-                                    <th class="text-center pb-4">Qty</th>
-                                    <th class="text-right pb-4">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
-                                @foreach($sale->saleItems as $item)
-                                    <tr>
-                                        <td class="py-6">
-                                            <div class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase leading-none mb-1">{{ $item->product->item_name }}</div>
-                                            <div class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">{{ $item->product->category->category_name ?? 'General' }}</div>
-                                        </td>
-                                        <td class="py-6 text-center text-sm font-bold text-slate-500 dark:text-slate-400 tabular-nums">RM {{ number_format($item->product->price, 2) }}</td>
-                                        <td class="py-6 text-center text-sm font-black text-slate-800 dark:text-white tabular-nums">{{ $item->quantity }}</td>
-                                        <td class="py-6 text-right text-sm font-black text-slate-800 dark:text-white tabular-nums">RM {{ number_format($item->product->price * $item->quantity, 2) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        @if($bundleItems->count() > 0)
+                            <div class="mb-8">
+                                <h5 class="text-xs font-black uppercase tracking-wider text-violet-700 dark:text-violet-400 mb-4 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-violet-600 animate-pulse"></span>
+                                    Selected Bundles
+                                </h5>
+                                <div class="border border-violet-100 dark:border-violet-900/30 rounded-2xl overflow-hidden bg-violet-50/10 dark:bg-violet-950/5 p-4 mb-6">
+                                    @foreach($bundleItems as $promoId => $items)
+                                        @php
+                                            $promo = $items->first()->promotion;
+                                            $promoName = $promo ? $promo->promo_name : 'Bundle Promotion';
+                                            $discountPercent = $promo ? ($promo->final_discount ?? 10) : 10;
+                                        @endphp
+                                        <div class="mb-6 last:mb-0">
+                                            <div class="flex items-center justify-between mb-3 pb-2 border-b border-violet-100 dark:border-violet-900/30">
+                                                <span class="text-xs font-black uppercase text-violet-750 dark:text-violet-300">Bundle: {{ $promoName }}</span>
+                                                <span class="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 text-[9px] font-black uppercase tracking-wider rounded-md">{{ $discountPercent }}% OFF Bundle Items</span>
+                                            </div>
+                                            <table class="w-full">
+                                                <thead>
+                                                    <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100/50 dark:border-slate-700/30">
+                                                        <th class="text-left pb-2 w-[45%]">Description</th>
+                                                        <th class="text-center pb-2">Original Price</th>
+                                                        <th class="text-center pb-2">Discounted Rate</th>
+                                                        <th class="text-center pb-2">Qty</th>
+                                                        <th class="text-right pb-2">Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-50 dark:divide-slate-750/30">
+                                                    @foreach($items as $item)
+                                                        @php
+                                                            $discountedPrice = $item->product->price * (1 - ($discountPercent / 100));
+                                                            $amount = $discountedPrice * $item->quantity;
+                                                        @endphp
+                                                        <tr>
+                                                            <td class="py-4">
+                                                                <div class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase leading-none mb-1">{{ $item->product->item_name }}</div>
+                                                                <div class="text-[9px] text-slate-400 font-bold tracking-widest uppercase">{{ $item->product->category->category_name ?? 'General' }}</div>
+                                                            </td>
+                                                            <td class="py-4 text-center text-sm font-bold text-slate-400 line-through tabular-nums">RM {{ number_format($item->product->price, 2) }}</td>
+                                                            <td class="py-4 text-center text-sm font-black text-violet-650 dark:text-violet-400 tabular-nums">RM {{ number_format($discountedPrice, 2) }}</td>
+                                                            <td class="py-4 text-center text-sm font-black text-slate-800 dark:text-white tabular-nums">{{ $item->quantity }}</td>
+                                                            <td class="py-4 text-right text-sm font-black text-slate-800 dark:text-white tabular-nums">RM {{ number_format($amount, 2) }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($singleItems->count() > 0)
+                            <div>
+                                <h5 class="text-xs font-black uppercase tracking-wider text-slate-650 dark:text-slate-400 mb-4 flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                                    Additional Single Items
+                                </h5>
+                                <div class="border border-slate-100 dark:border-slate-700/50 rounded-2xl overflow-hidden p-4 bg-slate-50/30 dark:bg-slate-900/10">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100/50 dark:border-slate-700/30">
+                                                <th class="text-left pb-2 w-[45%]">Description</th>
+                                                <th class="text-center pb-2">Rate</th>
+                                                <th class="text-center pb-2">Qty</th>
+                                                <th class="text-right pb-2">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-50 dark:divide-slate-750/30">
+                                            @foreach($singleItems as $item)
+                                                @php
+                                                    $amount = $item->product->price * $item->quantity;
+                                                @endphp
+                                                <tr>
+                                                    <td class="py-4">
+                                                        <div class="text-sm font-black text-slate-700 dark:text-slate-200 uppercase leading-none mb-1">{{ $item->product->item_name }}</div>
+                                                        <div class="text-[9px] text-slate-400 font-bold tracking-widest uppercase">{{ $item->product->category->category_name ?? 'General' }}</div>
+                                                    </td>
+                                                    <td class="py-4 text-center text-sm font-bold text-slate-500 dark:text-slate-400 tabular-nums">RM {{ number_format($item->product->price, 2) }}</td>
+                                                    <td class="py-4 text-center text-sm font-black text-slate-800 dark:text-white tabular-nums">{{ $item->quantity }}</td>
+                                                    <td class="py-4 text-right text-sm font-black text-slate-800 dark:text-white tabular-nums">RM {{ number_format($amount, 2) }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Financial Summary -->
+                    <div class="flex justify-end mb-8">
+                        <div class="w-full md:w-80 space-y-3 bg-slate-50/50 dark:bg-slate-900/30 p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
+                            <div class="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                <span class="text-[10px] font-black uppercase tracking-wider">Subtotal</span>
+                                <span class="font-bold text-sm tabular-nums">RM {{ number_format($subtotal, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                <span class="text-[10px] font-black uppercase tracking-wider">Estimated Tax (6%)</span>
+                                <span class="font-bold text-sm tabular-nums">RM {{ number_format($tax, 2) }}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Receipt Footer / Total -->

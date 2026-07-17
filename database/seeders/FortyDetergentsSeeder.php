@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Manager;
 use App\Models\Category;
 use App\Services\AprioriService;
@@ -19,9 +19,9 @@ class FortyDetergentsSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Get test manager and salesman
+        // 1. Get test manager and salesmen
         $manager = Manager::where('email', 'nuraisyahsiti793@gmail.com')->first();
-        $salesman = Salesman::where('email', 'ariff@dozee.com')->first();
+        $salesmen = Salesmen::where('email', 'ariff@dozee.com')->first();
 
         // Ensure category "Detergent" exists
         $category = Category::firstOrCreate(['name' => 'Detergent']);
@@ -74,7 +74,7 @@ class FortyDetergentsSeeder extends Seeder
             $saleDate = Carbon::now()->subDays(rand(1, 30))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
 
             $sale = Sale::create([
-                'salesman_id' => $salesman ? $salesman->salesman_id : 1,
+                'salesmen_id' => $salesmen ? $salesmen->salesmen_id : 1,
                 'total_amount' => $totalAmount,
                 'sale_date' => $saleDate,
                 'status' => $isApproved ? 'Approved' : 'Pending',

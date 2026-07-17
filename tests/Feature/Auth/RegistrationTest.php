@@ -70,7 +70,7 @@ class RegistrationTest extends TestCase
             'address' => '123 Manager Way',
             'phone_number' => '012-345678901',
         ]);
-        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
+        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone number format. Only numbers allowed (10–11 digits). Example: 0123456789 or 012-3456789']);
 
         // Invalid: non-numeric
         $response = $this->post('/manager/register', [
@@ -82,7 +82,7 @@ class RegistrationTest extends TestCase
             'address' => '123 Manager Way',
             'phone_number' => 'abc-de12345',
         ]);
-        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
+        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone number format. Only numbers allowed (10–11 digits). Example: 0123456789 or 012-3456789']);
 
         // Invalid: too short (9 digits total, 10 with dash)
         $response = $this->post('/manager/register', [
@@ -94,7 +94,7 @@ class RegistrationTest extends TestCase
             'address' => '123 Manager Way',
             'phone_number' => '012-345678',
         ]);
-        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
+        $response->assertSessionHasErrors(['phone_number' => 'Invalid phone number format. Only numbers allowed (10–11 digits). Example: 0123456789 or 012-3456789']);
     }
 
     public function test_new_managers_can_register_with_international_phone_number_format()

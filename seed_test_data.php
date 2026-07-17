@@ -1,4 +1,9 @@
 <?php
+require __DIR__ . '/vendor/autoload.php';
+$app = require_once __DIR__ . '/bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -7,15 +12,15 @@ use Illuminate\Support\Facades\Hash;
 // ============================================================
 DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 DB::table('association_rules')->truncate();
-DB::table('transaction_details')->truncate();
-DB::table('sales_transactions')->truncate();
-DB::table('promotions')->truncate();
+DB::table('transaction_detail')->truncate();
+DB::table('sales_transaction')->truncate();
+DB::table('promotion')->truncate();
 DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
 // ============================================================
 // STEP 1: Ensure manager exists
 // ============================================================
-DB::table('managers')->updateOrInsert(
+DB::table('manager')->updateOrInsert(
     ['email' => 'nuraisyahsiti793@gmail.com'],
     [
         'name'       => 'Nur Aisyah',
@@ -26,7 +31,7 @@ DB::table('managers')->updateOrInsert(
         'updated_at' => now(),
     ]
 );
-$manager = DB::table('managers')->where('email', 'nuraisyahsiti793@gmail.com')->first();
+$manager = DB::table('manager')->where('email', 'nuraisyahsiti793@gmail.com')->first();
 $managerId = $manager->manager_id;
 echo "Manager ID: $managerId\n";
 
@@ -37,7 +42,7 @@ $salesmen = [
     ['name' => 'Ahmad Faris', 'username' => 'ahmadfaris', 'email' => 'faris@dozee.com'],
     ['name' => 'Siti Nurul',  'username' => 'sitinurul',  'email' => 'nurul@dozee.com'],
 ];
-$salesmanIds = [];
+$salesmenIds = [];
 foreach ($salesmen as $s) {
     $existing = DB::table('salesmen')->where('email', $s['email'])->first();
     if (!$existing) {
@@ -51,12 +56,12 @@ foreach ($salesmen as $s) {
             'created_at'     => now(),
             'updated_at'     => now(),
         ]);
-        $salesmanIds[] = $id;
+        $salesmenIds[] = $id;
     } else {
-        $salesmanIds[] = $existing->salesman_id;
+        $salesmenIds[] = $existing->salesmen_id;
     }
 }
-echo "Salesmen: " . implode(', ', $salesmanIds) . "\n";
+echo "Salesmen: " . implode(', ', $salesmenIds) . "\n";
 
 // ============================================================
 // STEP 3: Ensure categories & products exist
@@ -64,9 +69,9 @@ echo "Salesmen: " . implode(', ', $salesmanIds) . "\n";
 $categories = ['Liquid Laundry Detergent', 'Powder Detergent', 'Fabric Softener', 'Bleach', 'Stain Remover'];
 $catIds = [];
 foreach ($categories as $cat) {
-    $existing = DB::table('categories')->where('name', $cat)->first();
+    $existing = DB::table('category')->where('name', $cat)->first();
     if (!$existing) {
-        $id = DB::table('categories')->insertGetId([
+        $id = DB::table('category')->insertGetId([
             'name'       => $cat,
             'created_at' => now(),
             'updated_at' => now(),
@@ -87,9 +92,9 @@ $products = [
 ];
 $productIds = [];
 foreach ($products as $p) {
-    $existing = DB::table('items')->where('item_name', $p['item_name'])->first();
+    $existing = DB::table('item')->where('item_name', $p['item_name'])->first();
     if (!$existing) {
-        $id = DB::table('items')->insertGetId([
+        $id = DB::table('item')->insertGetId([
             'item_name'  => $p['item_name'],
             'volume'     => $p['volume'],
             'price'      => $p['price'],
@@ -139,12 +144,12 @@ $transactions = [
 $totalTx = 0;
 foreach ($transactions as $itemList) {
     // Round-robin salesmen
-    $salesmanId = $salesmanIds[$totalTx % count($salesmanIds)];
+    $salesmenId = $salesmenIds[$totalTx % count($salesmenIds)];
     
     // Distribute transactions across the last 6 months to display distinct bars in the monthly chart
     $saleDate = now()->subMonths(rand(0, 5))->subDays(rand(0, 27));
-    $txId = DB::table('sales_transactions')->insertGetId([
-        'salesman_id' => $salesmanId,
+    $txId = DB::table('sales_transaction')->insertGetId([
+        'salesmen_id' => $salesmenId,
         'total_amount'=> 0,
         'sale_date'   => $saleDate,
         'created_at'  => $saleDate,
@@ -154,9 +159,9 @@ foreach ($transactions as $itemList) {
     $total = 0;
     $items = is_array($itemList[0]) ? $itemList[0] : $itemList;
     foreach ($items as $itemId) {
-        $product = DB::table('items')->where('item_id', $itemId)->first();
+        $product = DB::table('item')->where('item_id', $itemId)->first();
         $qty = rand(1, 3);
-        DB::table('transaction_details')->insert([
+        DB::table('transaction_detail')->insert([
             'transaction_id' => $txId,
             'item_id'        => $itemId,
             'quantity'       => $qty,
@@ -166,7 +171,7 @@ foreach ($transactions as $itemList) {
         $total += $product->price * $qty;
     }
 
-    DB::table('sales_transactions')->where('transaction_id', $txId)->update(['total_amount' => $total]);
+    DB::table('sales_transaction')->where('transaction_id', $txId)->update(['total_amount' => $total]);
     $totalTx++;
 }
 echo "Inserted $totalTx transactions.\n";
@@ -175,9 +180,9 @@ echo "Inserted $totalTx transactions.\n";
 // STEP 5: Create sample Promotions
 // ============================================================
 // Manager-created (Active)
-DB::table('promotions')->insert([
+DB::table('promotion')->insert([
     'manager_id'  => $managerId,
-    'salesman_id' => null,
+    'salesmen_id' => null,
     'rule_id'     => null,
     'promo_name'  => 'Bundle & Save — Detergent + Softener',
     'description' => 'Buy any detergent and get 15% off fabric softener. Based on purchasing pattern analysis.',
@@ -188,10 +193,10 @@ DB::table('promotions')->insert([
     'updated_at'  => now(),
 ]);
 
-// Salesman-proposed (Pending)
-DB::table('promotions')->insert([
+// Salesmen-proposed (Pending)
+DB::table('promotion')->insert([
     'manager_id'  => null,
-    'salesman_id' => $salesmanIds[0],
+    'salesmen_id' => $salesmenIds[0],
     'rule_id'     => null,
     'promo_name'  => 'Holiday Raya Special',
     'description' => 'Offer 10% discount on all fabric softeners for the festive season.',
@@ -211,5 +216,5 @@ echo "Promotions inserted.\n";
 echo "\n=== ALL DONE ===\n";
 echo "Total transactions: $totalTx\n";
 echo "Manager login:  nuraisyahsiti793@gmail.com / Nurisy@22\n";
-echo "Salesman login: faris@dozee.com / password\n";
-echo "Salesman login: nurul@dozee.com / password\n";
+echo "Salesmen login: faris@dozee.com / password\n";
+echo "Salesmen login: nurul@dozee.com / password\n";

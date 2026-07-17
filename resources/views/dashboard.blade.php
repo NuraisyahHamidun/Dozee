@@ -97,8 +97,8 @@
                 <div class="flex items-center gap-4">
                     @if(Auth::guard('manager')->check() && Auth::guard('manager')->user()->profile_picture)
                         <img src="{{ asset('storage/' . Auth::guard('manager')->user()->profile_picture) }}" class="w-16 h-16 rounded-3xl object-cover border border-slate-200 dark:border-slate-700 shadow-xl" alt="Avatar">
-                    @elseif(Auth::guard('salesman')->check() && Auth::guard('salesman')->user()->profile_picture)
-                        <img src="{{ asset('storage/' . Auth::guard('salesman')->user()->profile_picture) }}" class="w-16 h-16 rounded-3xl object-cover border border-slate-200 dark:border-slate-700 shadow-xl" alt="Avatar">
+                    @elseif(Auth::guard('salesmen')->check() && Auth::guard('salesmen')->user()->profile_picture)
+                        <img src="{{ asset('storage/' . Auth::guard('salesmen')->user()->profile_picture) }}" class="w-16 h-16 rounded-3xl object-cover border border-slate-200 dark:border-slate-700 shadow-xl" alt="Avatar">
                     @else
                         <div class="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100 dark:shadow-none">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -111,7 +111,7 @@
                                 @if(Auth::guard('manager')->check())
                                     {{ Auth::guard('manager')->user()->name }}
                                 @else
-                                    {{ Auth::guard('salesman')->user()->name }}
+                                    {{ Auth::guard('salesmen')->user()->name }}
                                 @endif
                             </span>!
                         </h1>
@@ -490,34 +490,20 @@
                                     <!-- Header -->
                                     <div class="flex justify-between items-start">
                                         <div>
-                                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-violet-50 text-violet-600 dark:bg-violet-500/10 mb-2">Bubble Chart</span>
+                                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 dark:bg-blue-500/10 mb-2">AI Insights</span>
                                             <h3 class="text-xl font-bold text-slate-800 dark:text-white heading-font">Bundle Recommendations</h3>
-                                            <p class="text-xs text-slate-400 font-medium mt-0.5">Market Basket Analysis · X: Support · Y: Confidence · Size: Lift</p>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span id="aprioriRuleCount" class="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1 rounded-full tracking-widest uppercase">0 rules</span>
-                                            <button type="button" onclick="downloadChart('apriori', 'apriori_rules.png')" class="p-2 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all" title="Download Chart">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                            </button>
+                                            <p class="text-xs text-slate-400 font-medium mt-0.5">Automated association recommendations derived from sales history</p>
                                         </div>
                                     </div>
 
-                                    <!-- Full-width Bubble Chart -->
-                                    <div class="chart-slide-wrapper h-72 md:h-80">
-                                        <canvas id="aprioriChart"></canvas>
-                                        <!-- Empty state overlay -->
-                                        <div id="aprioriEmpty" class="absolute inset-0 hidden flex-col items-center justify-center text-center rounded-2xl">
-                                            <div class="w-14 h-14 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-3 mx-auto">
-                                                <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                            </div>
-                                            <p class="text-sm font-bold text-slate-500">No combinations found</p>
-                                            <p class="text-xs text-slate-400 mt-1">Run Market Basket Analysis to generate rules</p>
+                                    <!-- Clean Empty State Card -->
+                                    <div class="bg-white dark:bg-slate-800/80 p-12 rounded-2xl border border-[#E6ECFA] dark:border-slate-700/50 flex flex-col items-center justify-center text-center h-80 shadow-sm">
+                                        <div class="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 text-[#4F7CFF] rounded-full flex items-center justify-center mb-4">
+                                            <!-- Soft analytics icon -->
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                         </div>
-                                    </div>
-
-                                    <!-- Recommendation Cards — compact horizontal scroll strip -->
-                                    <div id="aprioriCards" class="flex gap-3 overflow-x-auto pb-1" style="scrollbar-width: thin; scrollbar-color: #c7d2fe transparent;">
-                                        <!-- Dynamic Cards injected here -->
+                                        <h4 class="text-sm font-bold text-slate-800 dark:text-white heading-font">No Insights Available</h4>
+                                        <p class="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">Run AI Bundle Recommendation Engine to generate insights.</p>
                                     </div>
                                 </div>
                             </div>
@@ -657,9 +643,9 @@
 
             @if(Auth::guard('manager')->check())
                 <div class="premium-card p-8 bg-white dark:bg-slate-800 border border-slate-50 dark:border-slate-700/50 mt-8 mb-8">
-                    <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-6 heading-font">Our Top Staff</h3>
+                    <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-6 heading-font">Our Top Salesmen</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        @forelse($salesmanPerformance as $perf)
+                        @forelse($salesmenPerformance as $perf)
                             <div class="relative">
                                 <div class="flex justify-between items-end mb-2">
                                     <div class="flex flex-col">
@@ -771,15 +757,7 @@
                     });
                 }
 
-                const ctxApriori = document.getElementById('aprioriChart');
-                const aprioriColors = ['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#14b8a6','#f97316','#6366f1'];
-                if (ctxApriori) {
-                    chartInstances.apriori = new Chart(ctxApriori, {
-                        type: 'bubble',
-                        data: { datasets: [] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => items[0].dataset.label, label: ctx => [`Support: ${parseFloat(ctx.raw.x).toFixed(4)}`, `Confidence: ${(parseFloat(ctx.raw.y) * 100).toFixed(1)}%`, `Lift: ${parseFloat(ctx.raw.lift).toFixed(2)}x`] }, backgroundColor: '#1e293b', padding: 12, cornerRadius: 12 } }, scales: { x: { title: { display: true, text: 'Support', font: defaultFont }, ticks: { font: defaultFont }, grid: { borderDash: [5,5] } }, y: { title: { display: true, text: 'Confidence', font: defaultFont }, ticks: { font: defaultFont, callback: v => (v*100).toFixed(0)+'%' }, grid: { borderDash: [5,5] } } } }
-                    });
-                }
+
 
                 // Swiper
                 const swiper = new Swiper('.mySwiper', {
@@ -1013,54 +991,7 @@
                                 }
                             }
 
-                            if (chartInstances.apriori) {
-                                const aprioriLabels = data.apriori.labels;
-                                const hasApriori = aprioriLabels && aprioriLabels.length > 0;
-                                const emptyState = document.getElementById('aprioriEmpty');
-                                if (emptyState) { emptyState.classList.toggle('hidden', hasApriori); emptyState.classList.toggle('flex', !hasApriori); }
-                                const ruleCount = document.getElementById('aprioriRuleCount');
-                                if (ruleCount) { ruleCount.textContent = hasApriori ? `${aprioriLabels.length} rules` : '0 rules'; }
-                                chartInstances.apriori.data.datasets = hasApriori
-                                    ? aprioriLabels.map((label, idx) => ({
-                                        label: label,
-                                        data: [{ x: parseFloat(data.apriori.support[idx]), y: parseFloat(data.apriori.confidence[idx]), r: Math.max(Math.min(parseFloat(data.apriori.lift[idx]) * 4, 22), 6), lift: parseFloat(data.apriori.lift[idx]) }],
-                                        backgroundColor: aprioriColors[idx % aprioriColors.length] + 'aa',
-                                        borderColor: aprioriColors[idx % aprioriColors.length],
-                                        borderWidth: 1.5
-                                    })) : [];
-                                chartInstances.apriori.update();
 
-                                const cardsContainer = document.getElementById('aprioriCards');
-                                if (cardsContainer) {
-                                    if (!hasApriori) { cardsContainer.innerHTML = ''; }
-                                    else {
-                                        cardsContainer.innerHTML = aprioriLabels.map((label, idx) => {
-                                            const parts = label.split(' => ');
-                                            const antecedent = parts[0] || label;
-                                            const consequent = parts[1] || '';
-                                            const support = (parseFloat(data.apriori.support[idx]) * 100).toFixed(2);
-                                            const confidence = (parseFloat(data.apriori.confidence[idx]) * 100).toFixed(1);
-                                            const lift = parseFloat(data.apriori.lift[idx]).toFixed(2);
-                                            const ruleId = data.apriori.rule_ids ? data.apriori.rule_ids[idx] : '';
-                                            const color = aprioriColors[idx % aprioriColors.length];
-                                            const createPromoUrl = `{{ route('promotions.create') }}${ruleId ? '?rule_id=' + ruleId : ''}`;
-                                            return `
-                                            <div class="flex-shrink-0 w-56 flex flex-col gap-2 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/40 transition-all group bg-white dark:bg-slate-800/60">
-                                                <div class="flex items-start gap-2">
-                                                    <div class="w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0" style="background:${color}"></div>
-                                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-snug">${antecedent} <svg class="inline w-3 h-3 text-indigo-400 mx-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg> ${consequent}</p>
-                                                </div>
-                                                <div class="flex items-center gap-2 flex-wrap">
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Sup <span class="text-slate-600 dark:text-slate-300">${support}%</span></span>
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Conf <span class="text-emerald-600">${confidence}%</span></span>
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Lift <span class="text-indigo-600">${lift}x</span></span>
-                                                </div>
-                                                <a href="${createPromoUrl}" class="text-center text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100">+ Promo</a>
-                                            </div>`;
-                                        }).join('');
-                                    }
-                                }
-                            }
                         } else {
                             // --- STAFF UPDATE LOGIC ---
                             if (chartInstances.staffSalesPerformance) {

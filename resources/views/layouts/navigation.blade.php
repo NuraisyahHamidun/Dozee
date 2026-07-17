@@ -13,49 +13,41 @@
                     </a>
                 </div>
  
-                <!-- Navigation Links -->
-                <div class="hidden space-x-2 sm:-my-px sm:ms-12 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('dashboard') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                 <div class="hidden space-x-2 sm:-my-px sm:ms-5 sm:flex">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('dashboard') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                         {{ __('Dashboard') }}
                     </x-nav-link>
- 
                     @if(Auth::guard('manager')->check())
-                        <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('accounts.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('accounts.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Salesmen') }}
                         </x-nav-link>
-                    @endif
-
-                    @if(Auth::guard('manager')->check())
-                        <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('categories.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('categories.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Category') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('products.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('products.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Items') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('promotions.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('promotions.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Promotion') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('analysis.weka')" :active="request()->routeIs('analysis.weka') || request()->routeIs('analysis.index')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('analysis.weka') || request()->routeIs('analysis.index') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
-                            {{ __('Apriori algorithm') }}
+                        <x-nav-link :href="route('analysis.index')" :active="request()->routeIs('analysis.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('analysis.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                            {{ __('Market Basket Analysis') }}
                         </x-nav-link>
-                    @elseif(Auth::guard('salesman')->check())
-                        <x-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('sales.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('reports.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                            {{ __('Reports') }}
+                        </x-nav-link>
+                    @elseif(Auth::guard('salesmen')->check())
+                        <x-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('sales.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Sales') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('promotions.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('promotions.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Promotion') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('salesman.items.index')" :active="request()->routeIs('salesman.items.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('salesman.items.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
+                        <x-nav-link :href="route('salesmen.items.index')" :active="request()->routeIs('salesmen.items.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('salesmen.items.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
                             {{ __('Items') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('reports.salesman_personal.index')" :active="request()->routeIs('reports.salesman_personal.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('reports.salesman_personal.*') ? 'bg-purple-50/50 dark:bg-purple-500/10 shadow-sm text-purple-600 dark:text-purple-400' : '' }}">
+                        <x-nav-link :href="route('reports.salesmen_personal.index')" :active="request()->routeIs('reports.salesmen_personal.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest whitespace-nowrap {{ request()->routeIs('reports.salesmen_personal.*') ? 'bg-purple-50/50 dark:bg-purple-500/10 shadow-sm text-purple-600 dark:text-purple-400' : '' }}">
                             {{ __('Report') }}
-                        </x-nav-link>
-                    @endif
-                    
-                    @if(Auth::guard('manager')->check())
-                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" class="px-4 py-2 rounded-xl transition-all duration-200 font-bold text-xs uppercase tracking-widest {{ request()->routeIs('reports.*') ? 'bg-indigo-50/50 dark:bg-indigo-500/10 shadow-sm' : '' }}">
-                            {{ __('Reports') }}
                         </x-nav-link>
                     @endif
                 </div>
@@ -69,23 +61,23 @@
                             <div class="flex items-center gap-3">
                                 @if(Auth::guard('manager')->check() && Auth::guard('manager')->user()->profile_picture)
                                     <img src="{{ asset('storage/' . Auth::guard('manager')->user()->profile_picture) }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10" alt="Avatar">
-                                @elseif(Auth::guard('salesman')->check() && Auth::guard('salesman')->user()->profile_picture)
-                                    <img src="{{ asset('storage/' . Auth::guard('salesman')->user()->profile_picture) }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10" alt="Avatar">
+                                @elseif(Auth::guard('salesmen')->check() && Auth::guard('salesmen')->user()->profile_picture)
+                                    <img src="{{ asset('storage/' . Auth::guard('salesmen')->user()->profile_picture) }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10" alt="Avatar">
                                 @else
                                     <div class="w-8 h-8 rounded-full bg-gradient-premium flex items-center justify-center text-white text-[10px] font-black">
-                                        {{ substr(Auth::guard('manager')->check() ? Auth::guard('manager')->user()->name : Auth::guard('salesman')->user()->name, 0, 1) }}
+                                        {{ substr(Auth::guard('manager')->check() ? Auth::guard('manager')->user()->name : Auth::guard('salesmen')->user()->name, 0, 1) }}
                                     </div>
                                 @endif
                                 <div class="text-left hidden lg:block">
                                     <p class="text-[10px] font-black leading-none mb-1 text-slate-800 dark:text-white">
                                         @if(Auth::guard('manager')->check())
                                             {{ Auth::guard('manager')->user()->name }}
-                                        @elseif(Auth::guard('salesman')->check())
-                                            {{ Auth::guard('salesman')->user()->name }}
+                                        @elseif(Auth::guard('salesmen')->check())
+                                            {{ Auth::guard('salesmen')->user()->name }}
                                         @endif
                                     </p>
                                     <p class="text-[8px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-                                        {{ Auth::guard('manager')->check() ? 'Manager' : 'Salesman' }}
+                                        {{ Auth::guard('manager')->check() ? 'Manager' : 'Salesmen' }}
                                     </p>
                                 </div>
                                 <svg class="fill-current h-4 w-4 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -109,13 +101,13 @@
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
-                        @elseif(Auth::guard('salesman')->check())
-                            <x-dropdown-link :href="route('salesman.profile.edit')">
+                        @elseif(Auth::guard('salesmen')->check())
+                            <x-dropdown-link :href="route('salesmen.profile.edit')">
                                 {{ __('My Profile') }}
                             </x-dropdown-link>
-                            <form method="POST" action="{{ route('salesman.logout') }}">
+                            <form method="POST" action="{{ route('salesmen.logout') }}">
                                 @csrf
-                                <x-dropdown-link :href="route('salesman.logout')"
+                                <x-dropdown-link :href="route('salesmen.logout')"
                                         onclick="event.preventDefault();
                                                     this.closest('form').submit();">
                                     {{ __('Log Out') }}
@@ -161,23 +153,24 @@
                 <x-responsive-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')">
                     {{ __('Promotion') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('analysis.weka')" :active="request()->routeIs('analysis.weka') || request()->routeIs('analysis.index')">
-                    {{ __('Apriori algorithm') }}
+                <x-responsive-nav-link :href="route('analysis.index')" :active="request()->routeIs('analysis.*')">
+                    {{ __('Market Basket Analysis') }}
                 </x-responsive-nav-link>
+
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     {{ __('Reports') }}
                 </x-responsive-nav-link>
-            @elseif(Auth::guard('salesman')->check())
+            @elseif(Auth::guard('salesmen')->check())
                 <x-responsive-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.*')">
                     {{ __('Sales') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('promotions.index')" :active="request()->routeIs('promotions.*')">
                     {{ __('Promotion') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('salesman.items.index')" :active="request()->routeIs('salesman.items.*')">
+                <x-responsive-nav-link :href="route('salesmen.items.index')" :active="request()->routeIs('salesmen.items.*')">
                     {{ __('Items') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('reports.salesman_personal.index')" :active="request()->routeIs('reports.salesman_personal.*')">
+                <x-responsive-nav-link :href="route('reports.salesmen_personal.index')" :active="request()->routeIs('reports.salesmen_personal.*')">
                     {{ __('Report') }}
                 </x-responsive-nav-link>
             @endif
@@ -189,9 +182,9 @@
                 @if(Auth::guard('manager')->check())
                     <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::guard('manager')->user()->name }}</div>
                     <div class="font-medium text-sm text-gray-500">{{ Auth::guard('manager')->user()->email }}</div>
-                @elseif(Auth::guard('salesman')->check())
-                    <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::guard('salesman')->user()->name }}</div>
-                    <div class="font-medium text-sm text-gray-500">{{ Auth::guard('salesman')->user()->email }}</div>
+                @elseif(Auth::guard('salesmen')->check())
+                    <div class="font-medium text-base text-gray-800 dark:text-gray-200">{{ Auth::guard('salesmen')->user()->name }}</div>
+                    <div class="font-medium text-sm text-gray-500">{{ Auth::guard('salesmen')->user()->email }}</div>
                 @endif
             </div>
 
@@ -209,10 +202,10 @@
                             {{ __('Log Out') }}
                         </x-responsive-nav-link>
                     </form>
-                @elseif(Auth::guard('salesman')->check())
-                    <form method="POST" action="{{ route('salesman.logout') }}">
+                @elseif(Auth::guard('salesmen')->check())
+                    <form method="POST" action="{{ route('salesmen.logout') }}">
                         @csrf
-                        <x-responsive-nav-link :href="route('salesman.logout')"
+                        <x-responsive-nav-link :href="route('salesmen.logout')"
                                 onclick="event.preventDefault();
                                             this.closest('form').submit();">
                             {{ __('Log Out') }}

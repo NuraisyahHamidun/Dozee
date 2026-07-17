@@ -32,8 +32,8 @@ class AprioriService
             $query->where('event_name', $filters['event_name']);
         }
 
-        if (!empty($filters['salesman_id'])) {
-            $query->where('salesman_id', $filters['salesman_id']);
+        if (!empty($filters['salesmen_id'])) {
+            $query->where('salesmen_id', $filters['salesmen_id']);
         }
 
         $transactions      = [];
@@ -138,11 +138,37 @@ class AprioriService
         }
 
         // ── 5. Generate Association Rules & persist ─────────────────────────
-        // Clear old rules atomically
-        AprioriAnalysis::query()->delete();
-
         $productsById = Product::pluck('item_name', 'item_id')->toArray();
+        $keepRuleIds = [];
         $rules = [];
+
+        $persistRule = function($antecedent, $consequent, $support, $confidence, $lift, $ruleText) use (&$keepRuleIds, &$rules) {
+            $existing = AprioriAnalysis::where('antecedent', $antecedent)
+                ->where('consequent', $consequent)
+                ->first();
+
+            if ($existing) {
+                $existing->update([
+                    'rule_text'  => $ruleText,
+                    'support'    => round($support, 4),
+                    'confidence' => round($confidence, 4),
+                    'lift'       => round($lift, 4),
+                ]);
+                $keepRuleIds[] = $existing->rule_id;
+                $rules[] = $existing;
+            } else {
+                $newRule = AprioriAnalysis::create([
+                    'rule_text'  => $ruleText,
+                    'antecedent' => $antecedent,
+                    'consequent' => $consequent,
+                    'support'    => round($support, 4),
+                    'confidence' => round($confidence, 4),
+                    'lift'       => round($lift, 4),
+                ]);
+                $keepRuleIds[] = $newRule->rule_id;
+                $rules[] = $newRule;
+            }
+        };
 
         // Rules from 2-itemsets: A → B and B → A
         foreach ($frequent2 as $pairKey => $count) {
@@ -159,14 +185,7 @@ class AprioriService
                 $conviction = $denominator > 0 ? (1 - $supportB) / $denominator : 1.0;
                 $ruleText = $anteName . ' ==> ' . $consName . ' [conv:' . round($conviction, 2) . ']';
 
-                $rules[] = AprioriAnalysis::create([
-                    'rule_text'  => $ruleText,
-                    'antecedent' => (string) $a,
-                    'consequent' => (string) $b,
-                    'support'    => round($support, 4),
-                    'confidence' => round($confAB, 4),
-                    'lift'       => round($confAB / ($supportB), 4),
-                ]);
+                $persistRule((string) $a, (string) $b, $support, $confAB, $confAB / $supportB, $ruleText);
             }
 
             // B → A
@@ -179,14 +198,7 @@ class AprioriService
                 $conviction = $denominator > 0 ? (1 - $supportA) / $denominator : 1.0;
                 $ruleText = $anteName . ' ==> ' . $consName . ' [conv:' . round($conviction, 2) . ']';
 
-                $rules[] = AprioriAnalysis::create([
-                    'rule_text'  => $ruleText,
-                    'antecedent' => (string) $b,
-                    'consequent' => (string) $a,
-                    'support'    => round($support, 4),
-                    'confidence' => round($confBA, 4),
-                    'lift'       => round($confBA / ($supportA), 4),
-                ]);
+                $persistRule((string) $b, (string) $a, $support, $confBA, $confBA / $supportA, $ruleText);
             }
         }
 
@@ -222,17 +234,21 @@ class AprioriService
                     $ruleText = implode(' + ', $anteNames) . ' ==> ' . $consName . ' [conv:' . round($conviction, 2) . ']';
 
                     // Encode antecedent as "A+B" so UI can split on '+'
-                    $rules[] = AprioriAnalysis::create([
-                        'rule_text'  => $ruleText,
-                        'antecedent' => implode('+', $antecedents),
-                        'consequent' => (string) $consequent,
-                        'support'    => round($support, 4),
-                        'confidence' => round($confidence, 4),
-                        'lift'       => round($confidence / ($supportCons), 4),
-                    ]);
+                    $persistRule(implode('+', $antecedents), (string) $consequent, $support, $confidence, $confidence / $supportCons, $ruleText);
                 }
             }
         }
+
+        // Clean up rules that are no longer valid AND not referenced by any promotion
+        $referencedRuleIdsInPromo = DB::table('promotion')->whereNotNull('rule_id')->pluck('rule_id')->unique()->toArray();
+        $referencedRuleIdsInPivot = DB::table('promotion_association_rule')->pluck('rule_id')->unique()->toArray();
+        $referencedRuleIds = array_unique(array_merge($referencedRuleIdsInPromo, $referencedRuleIdsInPivot));
+
+        AprioriAnalysis::whereNotIn('rule_id', $keepRuleIds)
+            ->whereNotIn('rule_id', $referencedRuleIds)
+            ->delete();
+
+        \App\Models\Promotion::syncFromAprioriRules();
 
         return [
             'frequentItemsets'  => [

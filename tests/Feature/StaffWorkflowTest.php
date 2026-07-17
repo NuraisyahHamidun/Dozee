@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -46,25 +46,25 @@ class StaffWorkflowTest extends TestCase
 
         $response->assertRedirect(route('accounts.index'));
         
-        $this->assertDatabaseHas('salesman', [
+        $this->assertDatabaseHas('salesmen', [
             'name' => 'New Staff Member',
             'username' => 'newstaffmember',
             'email' => 'newstaff@test.com',
             'phone_number' => '012-3456789',
         ]);
 
-        $salesman = Salesman::where('username', 'newstaffmember')->first();
+        $salesmen = Salesmen::where('username', 'newstaffmember')->first();
         
-        $this->assertNotNull($salesman->staff_code);
-        $this->assertStringStartsWith('STF-', $salesman->staff_code);
-        $this->assertEquals(10, strlen($salesman->staff_code)); // STF- + 6 characters = 10 characters
+        $this->assertNotNull($salesmen->staff_code);
+        $this->assertStringStartsWith('STF-', $salesmen->staff_code);
+        $this->assertEquals(10, strlen($salesmen->staff_code)); // STF- + 6 characters = 10 characters
     }
 
     /** @test */
     public function staff_creation_auto_generates_unique_username_with_numeric_suffix_on_duplicate()
     {
-        // Create first salesman with name "Nur Aisyah"
-        Salesman::create([
+        // Create first salesmen with name "Nur Aisyah"
+        Salesmen::create([
             'manager_id' => $this->manager->manager_id,
             'name' => 'Nur Aisyah',
             'username' => 'nuraisyah',
@@ -75,7 +75,7 @@ class StaffWorkflowTest extends TestCase
             'phone_number' => '012-3456788',
         ]);
 
-        // Create second salesman with same name via POST
+        // Create second salesmen with same name via POST
         $response = $this->actingAs($this->manager, 'manager')
             ->post(route('accounts.store'), [
                 'name' => 'Nur Aisyah',
@@ -88,7 +88,7 @@ class StaffWorkflowTest extends TestCase
 
         $response->assertRedirect(route('accounts.index'));
 
-        $this->assertDatabaseHas('salesman', [
+        $this->assertDatabaseHas('salesmen', [
             'name' => 'Nur Aisyah',
             'username' => 'nuraisyah1',
             'email' => 'nur2@test.com',
@@ -101,7 +101,7 @@ class StaffWorkflowTest extends TestCase
     {
         Storage::fake('public');
 
-        $salesman = Salesman::create([
+        $salesmen = Salesmen::create([
             'manager_id' => $this->manager->manager_id,
             'name' => 'Staff Test',
             'username' => 'stafftest',
@@ -114,8 +114,8 @@ class StaffWorkflowTest extends TestCase
 
         $file = $this->createDummyImage();
 
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test Updated',
                 'username' => 'stafftest',
@@ -125,15 +125,15 @@ class StaffWorkflowTest extends TestCase
                 'profile_picture' => $file,
             ]);
 
-        $response->assertRedirect(route('salesman.profile.edit'));
+        $response->assertRedirect(route('salesmen.profile.edit'));
         
-        $salesman->refresh();
-        $this->assertEquals('Staff Test Updated', $salesman->name);
-        $this->assertEquals('012-3456789', $salesman->phone_number);
-        $this->assertNotNull($salesman->profile_picture);
+        $salesmen->refresh();
+        $this->assertEquals('Staff Test Updated', $salesmen->name);
+        $this->assertEquals('012-3456789', $salesmen->phone_number);
+        $this->assertNotNull($salesmen->profile_picture);
         
         // Assert storage has the uploaded file
-        Storage::disk('public')->assertExists($salesman->profile_picture);
+        Storage::disk('public')->assertExists($salesmen->profile_picture);
     }
 
     protected function createDummyImage(): UploadedFile
@@ -154,7 +154,7 @@ class StaffWorkflowTest extends TestCase
     /** @test */
     public function phone_number_validation_rules()
     {
-        $salesman = Salesman::create([
+        $salesmen = Salesmen::create([
             'manager_id' => $this->manager->manager_id,
             'name' => 'Staff Test',
             'username' => 'stafftest',
@@ -165,8 +165,8 @@ class StaffWorkflowTest extends TestCase
         ]);
 
         // Invalid: missing (required)
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -176,8 +176,8 @@ class StaffWorkflowTest extends TestCase
         $response->assertSessionHasErrors(['phone_number']);
 
         // Invalid: non-numeric
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -188,8 +188,8 @@ class StaffWorkflowTest extends TestCase
         $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
 
         // Invalid: too long (12 digits)
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -200,8 +200,8 @@ class StaffWorkflowTest extends TestCase
         $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
 
         // Invalid: too short (9 digits)
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -212,8 +212,8 @@ class StaffWorkflowTest extends TestCase
         $response->assertSessionHasErrors(['phone_number' => 'Invalid phone format. Use 012-3456789 or 012-34567890']);
 
         // Valid: 10 digits
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -224,8 +224,8 @@ class StaffWorkflowTest extends TestCase
         $response->assertSessionHasNoErrors();
 
         // Valid: 11 digits
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test',
                 'username' => 'stafftest',
@@ -385,9 +385,9 @@ class StaffWorkflowTest extends TestCase
     }
 
     /** @test */
-    public function salesman_username_updates_automatically_when_name_is_edited()
+    public function salesmen_username_updates_automatically_when_name_is_edited()
     {
-        $salesman = Salesman::create([
+        $salesmen = Salesmen::create([
             'manager_id' => $this->manager->manager_id,
             'name' => 'Staff Test',
             'username' => 'stafftest',
@@ -407,8 +407,8 @@ class StaffWorkflowTest extends TestCase
             'phone_number' => '012-3456786',
         ]);
 
-        $response = $this->actingAs($salesman, 'salesman')
-            ->post(route('salesman.profile.update'), [
+        $response = $this->actingAs($salesmen, 'salesmen')
+            ->post(route('salesmen.profile.update'), [
                 '_method' => 'PATCH',
                 'name' => 'Staff Test Updated',
                 'username' => 'stafftest',
@@ -417,12 +417,12 @@ class StaffWorkflowTest extends TestCase
                 'phone_number' => '012-3456789',
             ]);
 
-        $response->assertRedirect(route('salesman.profile.edit'));
+        $response->assertRedirect(route('salesmen.profile.edit'));
         
-        $salesman->refresh();
-        $this->assertEquals('Staff Test Updated', $salesman->name);
+        $salesmen->refresh();
+        $this->assertEquals('Staff Test Updated', $salesmen->name);
         // Should have updated username, and since "stafftestupdated" exists, it should be "stafftestupdated1"
-        $this->assertEquals('stafftestupdated1', $salesman->username);
+        $this->assertEquals('stafftestupdated1', $salesmen->username);
     }
 
     /** @test */

@@ -1,16 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 class="font-bold text-2xl text-slate-800 dark:text-white leading-tight flex items-center gap-3">
-                <span class="p-2 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                </span>
-                {{ __('Market Association Discovery') }}
-            </h2>
-            <div class="flex items-center gap-2 text-sm font-medium text-slate-500">
-                <span class="flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Market Basket Analysis
+            <div>
+                <h2 class="font-extrabold text-2xl text-slate-900 leading-tight">
+                    {{ __('Market Basket Analysis + Association Insight Dashboard') }}
+                </h2>
+                <p class="text-xs text-slate-505 mt-1 font-medium">
+                    {{ __('Customer purchase patterns and product bundling insights using Apriori Algorithm') }}
+                </p>
+            </div>
+            <div class="flex items-center gap-2 text-sm font-medium text-slate-505 bg-white border border-slate-100 px-4 py-2 rounded-2xl shadow-sm">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                    Apriori Engine Active
                 </span>
                 <span class="text-slate-300">|</span>
                 <span>{{ now()->format('M d, Y') }}</span>
@@ -18,428 +20,744 @@
         </div>
     </x-slot>
 
-    <div class="py-6 space-y-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="py-6 space-y-6" x-data="{
+        selectedItem: null,
+        associationData: {{ json_encode($associationData) }},
+        showNetworkModal: false,
+        currentPage: 1,
+        itemsPerPage: 5,
+        get paginatedData() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            return this.associationData.slice(start, start + this.itemsPerPage);
+        },
+        get totalPages() {
+            return Math.ceil(this.associationData.length / this.itemsPerPage);
+        },
+        init() {
+            if (this.associationData.length > 0) {
+                this.selectedItem = this.associationData[0];
+            }
+        }
+    }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            @if($analysisRan && $totalTransactions === 0)
-                <div class="rounded-2xl bg-amber-50 border border-amber-200 p-5 flex items-start gap-4">
-                    <svg class="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    <div>
-                        <p class="font-bold text-amber-800 text-sm">No multi-item transactions found</p>
-                        <p class="text-amber-600 text-xs mt-0.5">Apriori requires transactions containing at least 2 different items. Add more sales data and try again.</p>
-                    </div>
-                </div>
-            @endif
 
-            {{-- ── KPI STATS ─────────────────────────────────────────────────────── --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
 
-                {{-- Total Transactions --}}
-                <div class="premium-card bg-white p-5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-indigo-50 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45C5.09 14.32 5 14.65 5 15c0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Transactions</p>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ number_format($stats['total_sales']) }}</h3>
-                    <p class="text-[10px] text-indigo-600 font-bold mt-2">Sales history analysed</p>
-                </div>
+            {{-- ── TWO COLUMN MAIN LAYOUT ──────────────────────────────────────────── --}}
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-                {{-- Items Tracked --}}
-                <div class="premium-card bg-white p-5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-emerald-50 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Items Tracked</p>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ number_format($stats['total_products']) }}</h3>
-                    <p class="text-[10px] text-emerald-600 font-bold mt-2">Products in inventory</p>
-                </div>
-
-                {{-- Rules Found --}}
-                <div class="premium-card bg-white p-5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-amber-50 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Rules Found</p>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ number_format($stats['rules_count']) }}</h3>
-                    <p class="text-[10px] text-amber-600 font-bold mt-2">Above confidence threshold</p>
-                </div>
-
-                {{-- Max Lift --}}
-                <div class="premium-card bg-white p-5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-rose-50 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Max Lift</p>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ number_format($stats['top_lift'], 2) }}</h3>
-                    <p class="text-[10px] text-rose-600 font-bold mt-2">Strongest association</p>
-                </div>
-
-                {{-- Avg Confidence --}}
-                <div class="premium-card bg-white p-5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-purple-50 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Avg Confidence</p>
-                    <h3 class="text-3xl font-black text-slate-800 tracking-tight">{{ number_format($stats['avg_confidence'] * 100, 1) }}%</h3>
-                    <p class="text-[10px] text-purple-600 font-bold mt-2">Mean rule certainty</p>
-                </div>
-
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                {{-- ── SIDEBAR: FILTERS ──────────────────────────────────────────── --}}
-                <div class="lg:col-span-3 space-y-6">
-                    <div class="premium-card bg-white p-6 sticky top-6">
-                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-widest mb-6 border-b border-slate-100 pb-4 flex items-center gap-2">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m10 4a2 2 0 100-4m0 4a2 2 0 110-4M14 4h6m-6 8h6m-6 8h6m-14 0h6m-14-8h6m-14-4h6"></path></svg>
-                            Analysis Settings
-                        </h3>
-
-                        <form method="GET" action="{{ route('analysis.index') }}" class="space-y-6">
-                            {{-- Event Filter --}}
-                            <div class="space-y-2">
-                                <x-input-label for="event_name" :value="__('Specific Event')" class="font-bold text-[10px] uppercase text-slate-400" />
-                                <select name="event_name" id="event_name" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 shadow-inner">
-                                    <option value="">{{ __('All Events') }}</option>
-                                    @foreach($eventNames as $name)
-                                        <option value="{{ $name }}" {{ $eventName == $name ? 'selected' : '' }}>{{ $name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            {{-- Salesman Filter --}}
-                            <div class="space-y-2">
-                                <x-input-label for="salesman_id" :value="__('Sales Representative')" class="font-bold text-[10px] uppercase text-slate-400" />
-                                <select name="salesman_id" id="salesman_id" class="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 shadow-inner">
-                                    <option value="">{{ __('All Staff') }}</option>
-                                    @foreach($salesmen as $id => $name)
-                                        <option value="{{ $id }}" {{ $salesmanId == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            {{-- Min Support Slider --}}
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <x-input-label for="support" :value="__('Min Support')" class="font-bold text-[10px] uppercase text-slate-400" />
-                                    <span id="support-val" class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-black tabular-nums">{{ $minSupport }}</span>
-                                </div>
-                                <input type="range" name="support" id="support" min="0.01" max="0.5" step="0.01"
-                                    value="{{ $minSupport }}"
-                                    class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                    oninput="document.getElementById('support-val').innerText = parseFloat(this.value).toFixed(2)">
-                                <p class="text-[10px] text-slate-400">% of transactions that must contain the pair</p>
-                            </div>
-
-                            {{-- Min Confidence Slider --}}
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <x-input-label for="confidence" :value="__('Min Confidence')" class="font-bold text-[10px] uppercase text-slate-400" />
-                                    <span id="confidence-val" class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-md text-[10px] font-black tabular-nums">{{ $minConfidence }}</span>
-                                </div>
-                                <input type="range" name="confidence" id="confidence" min="0.1" max="1" step="0.05"
-                                    value="{{ $minConfidence }}"
-                                    class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                                    oninput="document.getElementById('confidence-val').innerText = parseFloat(this.value).toFixed(2)">
-                                <p class="text-[10px] text-slate-400">Probability that B is bought when A is bought</p>
-                            </div>
-
-                            <input type="hidden" name="refresh" value="1">
-                            <x-primary-button class="w-full h-12 rounded-2xl flex items-center justify-center gap-2 text-xs font-black shadow-lg shadow-indigo-100 uppercase tracking-widest">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                {{ __('Run Analysis') }}
-                            </x-primary-button>
-
-                            {{-- Quick presets --}}
-                            <div class="pt-2 border-t border-slate-100 space-y-2">
-                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Quick Presets</p>
-                                <button type="button" onclick="setPreset(0.3, 0.7)"
-                                    class="w-full text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold text-slate-600 hover:text-indigo-700 transition-colors">
-                                    🔥 Strict (0.3 / 0.7) — Reliable bundles
-                                </button>
-                                <button type="button" onclick="setPreset(0.1, 0.5)"
-                                    class="w-full text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold text-slate-600 hover:text-indigo-700 transition-colors">
-                                    ⚡ Balanced (0.1 / 0.5) — Default
-                                </button>
-                                <button type="button" onclick="setPreset(0.03, 0.3)"
-                                    class="w-full text-left px-3 py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold text-slate-600 hover:text-indigo-700 transition-colors">
-                                    🔍 Explore (0.03 / 0.3) — Discover niche
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                {{-- ── MAIN CONTENT ──────────────────────────────────────────────── --}}
-                <div class="lg:col-span-9 space-y-8">
-
-                    {{-- ── Frequent 2-Itemsets Table ─────────────────────────────── --}}
-                    @if($analysisRan)
-                    <div class="premium-card bg-white overflow-hidden">
-                        <div class="p-6 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {{-- ── LEFT SECTION: REPORT TABLE ─────────────────────────────────────── --}}
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="premium-card bg-white p-6 md:p-8">
+                        
+                        {{-- Card Header with Export buttons --}}
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-50 pb-4">
                             <div>
-                                <h3 class="text-lg font-bold text-slate-800">Frequent 2-Item Pairings</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Products that appear together above the support threshold</p>
-                            </div>
-                            <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-bold w-fit">
-                                {{ count($frequentItemsets) }} Pairs Found
-                            </span>
-                        </div>
-
-                        @if(count($frequentItemsets) > 0)
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                                    <tr>
-                                        <th class="px-6 py-4">#</th>
-                                        <th class="px-6 py-4">Item A</th>
-                                        <th class="px-6 py-4">Item B</th>
-                                        <th class="px-6 py-4 text-center">Co-Occurrences</th>
-                                        <th class="px-6 py-4 text-right">Support</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    @php $rank = 1; @endphp
-                                    @foreach($frequentItemsets as $pairKey => $count)
-                                        @php
-                                            $pair    = explode(',', $pairKey);
-                                            $support = $stats['total_sales'] > 0
-                                                ? ($count / $stats['total_sales']) * 100
-                                                : 0;
-                                        @endphp
-                                        <tr class="hover:bg-indigo-50/30 transition-colors group">
-                                            <td class="px-6 py-4 text-xs font-black text-slate-400">{{ $rank++ }}</td>
-                                            <td class="px-6 py-4">
-                                                <span class="font-bold text-slate-700 text-sm">{{ $items[$pair[0]] ?? 'ID: '.$pair[0] }}</span>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <span class="font-bold text-slate-700 text-sm">{{ $items[$pair[1]] ?? 'ID: '.$pair[1] }}</span>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
-                                                    {{ $count }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 text-right">
-                                                <div class="flex flex-col items-end gap-1">
-                                                    <div class="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                        <div class="bg-indigo-600 h-1.5 rounded-full transition-all" style="width: {{ min($support, 100) }}%"></div>
-                                                    </div>
-                                                    <span class="text-[10px] font-black text-slate-500 tabular-nums">{{ number_format($support, 2) }}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @else
-                            <div class="p-10 text-center text-slate-400 text-sm italic">
-                                No pairs met the support threshold. Try lowering Min Support.
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- ── Frequent 3-Itemsets Table ─────────────────────────────── --}}
-                    @if(count($frequent3Itemsets) > 0)
-                    <div class="premium-card bg-white overflow-hidden">
-                        <div class="p-6 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-800">Frequent 3-Item Bundles</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Triplets that commonly appear in the same transaction</p>
-                            </div>
-                            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold w-fit">
-                                {{ count($frequent3Itemsets) }} Triplets Found
-                            </span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                                    <tr>
-                                        <th class="px-6 py-4">#</th>
-                                        <th class="px-6 py-4">Item A</th>
-                                        <th class="px-6 py-4">Item B</th>
-                                        <th class="px-6 py-4">Item C</th>
-                                        <th class="px-6 py-4 text-center">Co-Occurrences</th>
-                                        <th class="px-6 py-4 text-right">Support</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    @php $rank3 = 1; @endphp
-                                    @foreach($frequent3Itemsets as $trioKey => $count)
-                                        @php
-                                            $trio    = explode(',', $trioKey);
-                                            $support = $stats['total_sales'] > 0
-                                                ? ($count / $stats['total_sales']) * 100
-                                                : 0;
-                                        @endphp
-                                        <tr class="hover:bg-purple-50/30 transition-colors">
-                                            <td class="px-6 py-4 text-xs font-black text-slate-400">{{ $rank3++ }}</td>
-                                            <td class="px-6 py-4 font-bold text-slate-700 text-sm">{{ $items[$trio[0]] ?? 'ID: '.$trio[0] }}</td>
-                                            <td class="px-6 py-4 font-bold text-slate-700 text-sm">{{ $items[$trio[1]] ?? 'ID: '.$trio[1] }}</td>
-                                            <td class="px-6 py-4 font-bold text-slate-700 text-sm">{{ $items[$trio[2]] ?? 'ID: '.$trio[2] }}</td>
-                                            <td class="px-6 py-4 text-center">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{{ $count }}</span>
-                                            </td>
-                                            <td class="px-6 py-4 text-right">
-                                                <div class="flex flex-col items-end gap-1">
-                                                    <div class="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                        <div class="bg-purple-500 h-1.5 rounded-full" style="width: {{ min($support, 100) }}%"></div>
-                                                    </div>
-                                                    <span class="text-[10px] font-black text-slate-500 tabular-nums">{{ number_format($support, 2) }}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    @endif
-                    @endif {{-- end analysisRan --}}
-
-                    {{-- ── Association Rules / Bundle Cards ─────────────────────── --}}
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-xl font-bold text-slate-800">Recommended Event Bundles</h3>
-                                <p class="text-xs text-slate-400 font-medium mt-0.5">
-                                    Association rules stored in database
-                                    @if($eventName) — filtered by <span class="font-bold text-indigo-600">{{ $eventName }}</span> @endif
+                                <h3 class="text-lg font-bold text-slate-900 heading-font">
+                                    {{ __('Market Basket Analysis Report') }}
+                                </h3>
+                                <p class="text-xs text-slate-450 mt-0.5">
+                                    {{ __('Customer purchase patterns and product bundling insights') }}
                                 </p>
                             </div>
-                            <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold">
-                                {{ $results->total() }} total rules
-                            </span>
+                            
+                            {{-- Export actions --}}
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('reports.apriori.export', ['format'=>'excel']) }}" 
+                                   class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl shadow-md shadow-emerald-100 hover:shadow-emerald-200 transition-all flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    {{ __('Excel') }}
+                                </a>
+                                <a href="{{ route('reports.apriori.export', ['format'=>'pdf']) }}" 
+                                   class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl shadow-md shadow-rose-100 hover:shadow-rose-200 transition-all flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    {{ __('PDF') }}
+                                </a>
+                            </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($results as $rule)
-                                @php
-                                    $antIds   = $rule->antecedentIds();   // array of item_id(s)
-                                    $isMulti  = $rule->isMultiAntecedent();
-                                    $confPct  = round($rule->confidence * 100);
-                                    $suppPct  = round(($rule->support ?? 0) * 100, 2);
+                        {{-- Table Container --}}
+                        <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                            <table class="min-w-full divide-y divide-slate-100 text-left">
+                                <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                                    <tr>
+                                        <th class="px-5 py-4 w-12 text-center">NO.</th>
+                                        <th class="px-5 py-4 w-1/3">ITEM CODE</th>
+                                        <th class="px-5 py-4">ASSOCIATED ITEMS (PARTNERS)</th>
+                                        <th class="px-5 py-4 w-24 text-right">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <template x-for="(item, idx) in paginatedData" :key="item.item_id">
+                                        <tr class="hover:bg-purple-50/20 transition-all duration-150"
+                                            :class="selectedItem && selectedItem.item_id === item.item_id ? 'bg-purple-50/40' : ''">
+                                            <td class="px-5 py-4 text-xs font-black text-slate-400 text-center" x-text="(currentPage - 1) * itemsPerPage + idx + 1"></td>
+                                            <td class="px-5 py-4">
+                                                <span class="text-xs font-black text-indigo-600 uppercase tracking-wide" x-text="item.item_code"></span>
+                                            </td>
+                                            <td class="px-5 py-4">
+                                                <div class="flex flex-col gap-1.5">
+                                                    <template x-for="(partner, pIdx) in item.partners" :key="partner.item_id">
+                                                        <div class="flex items-center gap-1.5 text-xs text-slate-700">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                            <span class="font-extrabold text-slate-800" x-text="partner.item_code"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-4 text-right">
+                                                <button type="button" @click="selectedItem = item"
+                                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-purple-50 hover:bg-purple-600 text-purple-700 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all duration-200">
+                                                    View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="associationData.length === 0">
+                                        <tr>
+                                            <td colspan="4" class="px-5 py-16 text-center text-slate-400 italic text-sm">
+                                                No association results available in the database. Please add more transaction sales.
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
 
-                                    // Colour coding by confidence
-                                    $confColor = $confPct >= 70 ? 'emerald' : ($confPct >= 50 ? 'indigo' : 'amber');
-                                @endphp
-                                <div class="premium-card p-6 bg-white border-l-4 border-{{ $confColor }}-500 relative group overflow-hidden">
-
-                                    {{-- Top badge row --}}
-                                    <div class="flex items-center justify-between mb-5">
-                                        <div class="flex items-center gap-2">
-                                            @if($isMulti)
-                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[9px] font-bold rounded-full uppercase tracking-wider">3-item bundle</span>
-                                            @else
-                                                <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-bold rounded-full uppercase tracking-wider">2-item rule</span>
-                                            @endif
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-xl font-black text-{{ $confColor }}-600 tabular-nums">{{ $confPct }}%</p>
-                                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Confidence</p>
-                                        </div>
-                                    </div>
-
-                                    {{-- Antecedent → Consequent --}}
-                                    <div class="grid grid-cols-11 items-center gap-2 mb-5">
-
-                                        {{-- Antecedent (may be 1 or 2 items) --}}
-                                        <div class="col-span-5 p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-h-[90px] group-hover:bg-white transition-colors">
-                                            <p class="text-[8px] text-slate-400 font-bold uppercase mb-2 tracking-widest">
-                                                {{ $isMulti ? 'When buying (A+B)' : 'Base Item' }}
-                                            </p>
-                                            @foreach($antIds as $antId)
-                                                <p class="text-xs font-black text-slate-800 text-center leading-tight">
-                                                    {{ $items[$antId] ?? 'Item #'.$antId }}
-                                                </p>
-                                                @if(!$loop->last)
-                                                    <span class="text-[8px] text-slate-300 font-bold my-0.5">+ AND +</span>
-                                                @endif
-                                            @endforeach
-                                        </div>
-
-                                        {{-- Arrow --}}
-                                        <div class="col-span-1 flex flex-col items-center justify-center">
-                                            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-100 group-hover:scale-125 transition-transform">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                                            </div>
-                                        </div>
-
-                                        {{-- Consequent --}}
-                                        <div class="col-span-5 p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center min-h-[90px] group-hover:bg-white transition-colors">
-                                            <p class="text-[8px] text-slate-400 font-bold uppercase mb-2 tracking-widest">Also buys</p>
-                                            <p class="text-xs font-black text-emerald-600 text-center leading-tight">
-                                                {{ $items[$rule->consequent] ?? 'Item #'.$rule->consequent }}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {{-- Metrics row --}}
-                                    <div class="grid grid-cols-3 gap-3 pt-4 border-t border-slate-50">
-                                        <div class="flex flex-col items-center">
-                                            <span class="text-[9px] font-bold text-slate-400 uppercase">Support</span>
-                                            <span class="text-sm font-black text-slate-700 tabular-nums">{{ $suppPct }}%</span>
-                                        </div>
-                                        <div class="flex flex-col items-center">
-                                            <span class="text-[9px] font-bold text-slate-400 uppercase">Confidence</span>
-                                            <span class="text-sm font-black text-{{ $confColor }}-600 tabular-nums">{{ $confPct }}%</span>
-                                        </div>
-                                        <div class="flex flex-col items-center">
-                                            <span class="text-[9px] font-bold text-slate-400 uppercase">Lift</span>
-                                            <span class="text-sm font-black text-slate-700 tabular-nums">{{ number_format($rule->lift, 3) }}</span>
-                                        </div>
-                                    </div>
-
-                                    {{-- Manager action --}}
-                                    @if(Auth::guard('manager')->check())
-                                        <div class="mt-4 pt-3 border-t border-slate-50">
-                                            <a href="{{ route('promotions.create', ['rule_id' => $rule->rule_id]) }}"
-                                               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-bold transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 group/btn w-full justify-center">
-                                                Create Promotion from Rule
-                                                <svg class="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                                            </a>
-                                        </div>
-                                    @endif
-                                </div>
-                            @empty
-                                <div class="md:col-span-2 premium-card p-16 text-center bg-slate-50/50 border-2 border-dashed border-slate-200">
-                                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                                        <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                    </div>
-                                    <h4 class="text-xl font-bold text-slate-800 mb-2">No Rules Generated Yet</h4>
-                                    <p class="text-sm text-slate-500 max-w-sm mx-auto mb-8">
-                                        Click <b>Run Analysis</b> on the left to discover association rules from your sales data.
-                                        Try lowering <b>Min Support</b> or <b>Min Confidence</b> if no results appear.
-                                    </p>
-                                    <button type="button" onclick="setPreset(0.03, 0.3); document.querySelector('form').submit();"
-                                        class="text-indigo-600 font-bold text-xs hover:underline uppercase tracking-widest">
-                                        Try Explore Preset (0.03 / 0.3)
+                        {{-- Client-side Pagination Controls --}}
+                        <div class="mt-4 flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                            <div class="text-xs font-bold text-slate-505">
+                                Showing <span x-text="associationData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0"></span> to 
+                                <span x-text="Math.min(currentPage * itemsPerPage, associationData.length)"></span> of 
+                                <span x-text="associationData.length"></span> entries
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button type="button" @click="if (currentPage > 1) currentPage--" :disabled="currentPage === 1"
+                                        class="px-3 py-1.5 bg-white border border-slate-150 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-lg disabled:opacity-50 transition-all cursor-pointer">
+                                    Prev
+                                </button>
+                                <template x-for="page in totalPages" :key="page">
+                                    <button type="button" @click="currentPage = page"
+                                            :class="currentPage === page ? 'bg-purple-600 text-white border-purple-600' : 'bg-white border-slate-150 text-slate-700 hover:bg-slate-50'"
+                                            class="w-8 h-8 flex items-center justify-center border text-xs font-bold rounded-lg transition-all cursor-pointer"
+                                            x-text="page">
                                     </button>
-                                </div>
-                            @endforelse
+                                </template>
+                                <button type="button" @click="if (currentPage < totalPages) currentPage++" :disabled="currentPage === totalPages"
+                                        class="px-3 py-1.5 bg-white border border-slate-150 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-lg disabled:opacity-50 transition-all cursor-pointer">
+                                    Next
+                                </button>
+                            </div>
                         </div>
 
-                        {{-- Pagination --}}
-                        @if($results->hasPages())
-                            <div class="mt-6">{{ $results->links() }}</div>
-                        @endif
                     </div>
+                </div>
 
-                </div>{{-- end main content --}}
+                {{-- ── RIGHT SECTION: ASSOCIATION INSIGHT PANEL ───────────────────────── --}}
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="premium-card bg-white p-6 md:p-8 space-y-6 sticky top-6 shadow-sm border border-slate-100">
+                        <div class="border-b border-slate-50 pb-4">
+                            <h3 class="text-lg font-bold text-slate-900 heading-font">
+                                {{ __('Association Rule Insight Panel') }}
+                            </h3>
+                            <p class="text-xs text-slate-450 mt-0.5">
+                                {{ __('Focused analysis and bundling opportunities for the selected item') }}
+                            </p>
+                        </div>
+
+                        {{-- Section 1: Selected Item --}}
+                        <div class="space-y-2">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Selected Item</span>
+                            <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                <div class="min-w-0">
+                                    <span class="text-[10px] font-black text-indigo-600 uppercase tracking-wider" x-text="selectedItem ? selectedItem.item_code : 'N/A'"></span>
+                                    <h4 class="text-sm font-bold text-slate-800 leading-snug mt-0.5 truncate" x-text="selectedItem ? selectedItem.item_name : 'No item selected'"></h4>
+                                </div>
+                                <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-bold rounded-lg uppercase tracking-wider">
+                                    Focused
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Section 3: Association Map (SVG Graph) --}}
+                        <div class="space-y-2">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Association Map (Clean Graph)</span>
+                            <div class="relative w-full border border-slate-100 rounded-2xl bg-slate-50/50 p-4">
+                                <svg class="w-full h-44" viewBox="0 0 350 180">
+                                    <defs>
+                                        <style>
+                                            @keyframes dash {
+                                                to { stroke-dashoffset: -20; }
+                                            }
+                                            .animated-line {
+                                                animation: dash 1.5s linear infinite;
+                                            }
+                                        </style>
+                                    </defs>
+
+                                    <!-- Connection lines with dashed pattern using x-show to render in SVG correctly -->
+                                    <g x-show="selectedItem && selectedItem.partners[0]">
+                                        <line x1="80" y1="90" x2="220" y2="35" stroke="#818CF8" stroke-width="2" stroke-dasharray="4" class="animated-line" />
+                                        <rect x="135" y="50" width="35" height="15" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                        <text x="152.5" y="61" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].confidence + '%' : ''"></text>
+                                    </g>
+                                    <g x-show="selectedItem && selectedItem.partners[1]">
+                                        <line x1="80" y1="90" x2="220" y2="90" stroke="#818CF8" stroke-width="2" stroke-dasharray="4" class="animated-line" />
+                                        <rect x="135" y="82.5" width="35" height="15" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                        <text x="152.5" y="93.5" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedItem && selectedItem.partners[1] ? selectedItem.partners[1].confidence + '%' : ''"></text>
+                                    </g>
+                                    <g x-show="selectedItem && selectedItem.partners[2]">
+                                        <line x1="80" y1="90" x2="220" y2="145" stroke="#818CF8" stroke-width="2" stroke-dasharray="4" class="animated-line" />
+                                        <rect x="135" y="108" width="35" height="15" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                        <text x="152.5" y="119" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedItem && selectedItem.partners[2] ? selectedItem.partners[2].confidence + '%' : ''"></text>
+                                    </g>
+
+                                    <!-- Center Node (Selected Item) -->
+                                    <circle cx="80" cy="90" r="28" fill="#4F46E5" />
+                                    <circle cx="80" cy="90" r="24" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
+                                    <text x="80" y="93.5" fill="#FFFFFF" class="text-[9px] font-black" text-anchor="middle" x-text="selectedItem ? selectedItem.item_code : 'Item'"></text>
+
+                                    <!-- Partner Nodes -->
+                                    <g x-show="selectedItem && selectedItem.partners[0]">
+                                        <circle cx="220" cy="35" r="18" fill="#10B981" />
+                                        <text x="220" y="38" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].item_code : ''"></text>
+                                        <text x="245" y="38.5" fill="#334155" class="text-[9px] font-extrabold" x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].item_name : ''"></text>
+                                    </g>
+                                    <g x-show="selectedItem && selectedItem.partners[1]">
+                                        <circle cx="220" cy="90" r="18" fill="#0EA5E9" />
+                                        <text x="220" y="93" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedItem && selectedItem.partners[1] ? selectedItem.partners[1].item_code : ''"></text>
+                                        <text x="245" y="93.5" fill="#334155" class="text-[9px] font-extrabold" x-text="selectedItem && selectedItem.partners[1] ? selectedItem.partners[1].item_name : ''"></text>
+                                    </g>
+                                    <g x-show="selectedItem && selectedItem.partners[2]">
+                                        <circle cx="220" cy="145" r="18" fill="#F59E0B" />
+                                        <text x="220" y="148" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedItem && selectedItem.partners[2] ? selectedItem.partners[2].item_code : ''"></text>
+                                        <text x="245" y="148.5" fill="#334155" class="text-[9px] font-extrabold" x-text="selectedItem && selectedItem.partners[2] ? selectedItem.partners[2].item_name : ''"></text>
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+
+                        {{-- Section 2: Top Associations --}}
+                        <div class="space-y-2.5">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Top Associations</span>
+                            <div class="flex flex-col gap-2">
+                                <template x-for="(partner, pIdx) in (selectedItem ? selectedItem.partners : [])" :key="partner.item_id">
+                                    <div class="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full" :class="pIdx === 0 ? 'bg-emerald-500' : (pIdx === 1 ? 'bg-sky-500' : 'bg-amber-500')"></span>
+                                            <span class="text-xs font-black text-slate-800" x-text="partner.item_code"></span>
+                                            <span class="text-xs text-slate-505 font-medium truncate max-w-[200px]" x-text="partner.item_name"></span>
+                                        </div>
+                                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg" x-text="partner.confidence + '% Conf'"></span >
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Section 4: Key Association Metrics --}}
+                        <div class="space-y-2">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Key Association Metrics</span>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Support</p>
+                                    <p class="text-sm font-black text-slate-800 mt-1 tabular-nums"
+                                       x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].support + '%' : '0%'"></p>
+                                </div>
+                                <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Confidence</p>
+                                    <p class="text-sm font-black text-emerald-600 mt-1 tabular-nums"
+                                       x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].confidence + '%' : '0%'"></p>
+                                </div>
+                                <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-wider">Lift</p>
+                                    <p class="text-sm font-black text-indigo-600 mt-1 tabular-nums"
+                                       x-text="selectedItem && selectedItem.partners[0] ? selectedItem.partners[0].lift : '0.00'"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Section 5: Interpretation --}}
+                        <div class="space-y-2 pt-2 border-t border-slate-50">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Interpretation</span>
+                            <p class="text-xs text-slate-505 leading-relaxed font-medium">
+                                {{ __('Customers who purchase this item are likely to also purchase the top associated items based on association analysis.') }}
+                            </p>
+                        </div>
+
+                        {{-- Full Network Modal Toggle Button --}}
+                        <button type="button" @click="showNetworkModal = true"
+                                class="w-full py-3 border-2 border-dashed border-purple-200 hover:border-purple-600 hover:bg-purple-50 text-purple-700 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200">
+                            {{ __('View Full Network (All Links)') }}
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
-    </div>
 
-    <script>
-        function setPreset(support, confidence) {
-            const sInp = document.getElementById('support');
-            const cInp = document.getElementById('confidence');
-            sInp.value = support;
-            cInp.value = confidence;
-            document.getElementById('support-val').innerText    = support;
-            document.getElementById('confidence-val').innerText = confidence;
-        }
-    </script>
+        {{-- ── FULL PRODUCT ASSOCIATION NETWORK EXPLORER MODAL ────────────────── --}}
+        <div class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none"
+             x-show="showNetworkModal" style="display: none;"
+             x-data="{
+                selectedNetworkItem: null,
+                selectedPartner: null,
+                currentView: 'explorer', // 'explorer' or 'form'
+                
+                // Form Fields
+                formPromoName: '',
+                formDiscountType: 'Percentage',
+                formDiscountValue: 10,
+                formStartDate: '',
+                formEndDate: '',
+                formStatus: 'Active',
+                isSaving: false,
+
+                init() {
+                    this.$watch('showNetworkModal', value => {
+                        if (value) {
+                            this.selectedNetworkItem = this.selectedItem;
+                            this.selectedPartner = null;
+                            this.currentView = 'explorer';
+                        }
+                    });
+                },
+
+                openPromoForm() {
+                    if (!this.selectedPartner) return;
+                    this.formPromoName = 'Combo Promotion - ' + this.selectedNetworkItem.item_name + ' + ' + this.selectedPartner.item_name;
+                    this.formDiscountType = 'Percentage';
+                    this.formDiscountValue = 10;
+                    this.formStartDate = new Date().toISOString().split('T')[0];
+                    this.updateEndDate(this.formStartDate);
+                    this.formStatus = 'Active';
+                    this.currentView = 'form';
+                },
+
+                updateEndDate(startDateVal) {
+                    if (!startDateVal) return;
+                    const startDate = new Date(startDateVal);
+                    const endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 2);
+                    const yyyy = endDate.getFullYear();
+                    const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(endDate.getDate()).padStart(2, '0');
+                    this.formEndDate = `${yyyy}-${mm}-${dd}`;
+                },
+
+                submitPromo() {
+                    this.isSaving = true;
+                    fetch('{{ route('promotions.ajax-store') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            promo_name: this.formPromoName,
+                            description: 'Combo promotion featuring ' + this.selectedNetworkItem.item_name + ' and ' + this.selectedPartner.item_name + '. Recommended based on association rules (Support: ' + this.selectedPartner.support + '%, Confidence: ' + this.selectedPartner.confidence + '%, Lift: ' + this.selectedPartner.lift + ').',
+                            start_date: this.formStartDate,
+                            end_date: this.formEndDate,
+                            rule_id: this.selectedPartner.rule_id,
+                            discount_value: this.formDiscountValue,
+                            status: this.formStatus
+                        })
+                    })
+                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                    .then(res => {
+                        this.isSaving = false;
+                        if (res.status === 200 && res.body.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: res.body.message,
+                                confirmButtonColor: '#4F46E5'
+                            }).then(() => {
+                                window.location.href = '{{ route('promotions.index') }}';
+                            });
+                        } else {
+                            const errMsgs = res.body.errors ? res.body.errors.join('<br>') : 'Something went wrong.';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Validation Error',
+                                html: `<div class='text-left text-xs text-red-600 font-bold'>${errMsgs}</div>`,
+                                confirmButtonColor: '#EF4444'
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        this.isSaving = false;
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to connect to the server.',
+                            confirmButtonColor: '#EF4444'
+                        });
+                    });
+                }
+             }"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showNetworkModal = false"></div>
+
+            {{-- Modal Box --}}
+            <div class="relative w-full max-w-4xl mx-auto my-6 z-50 pointer-events-none px-4">
+                <div class="relative flex flex-col w-full bg-white border border-slate-100 rounded-3xl shadow-2xl outline-none focus:outline-none pointer-events-auto max-h-[95vh]">
+                    
+                    {{-- Modal Header --}}
+                    <div class="flex items-start justify-between p-6 border-b border-slate-100">
+                        <div>
+                            <h3 class="text-lg font-black text-slate-900 uppercase tracking-wide">
+                                {{ __('Full Product Association Network') }}
+                            </h3>
+                            <p class="text-xs text-slate-505 font-medium mt-0.5">
+                                {{ __('Visualize product relationships and frequently purchased combinations.') }}
+                            </p>
+                        </div>
+                        <button class="p-1 ml-auto bg-transparent border-0 text-slate-400 hover:text-slate-700 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+                                @click="showNetworkModal = false">
+                            <span class="bg-transparent text-slate-400 h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
+                        </button>
+                    </div>
+
+                    {{-- Modal Body --}}
+                    <div class="relative p-6 flex-auto overflow-y-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+                            
+                            {{-- Interactive Network Graph Column --}}
+                            <div class="md:col-span-7 flex flex-col">
+                                
+                                {{-- SVG network graph --}}
+                                <div class="w-full border border-slate-100 rounded-3xl bg-slate-50/50 p-4 flex-auto flex items-center justify-center">
+                                    <svg class="w-full h-96" viewBox="0 0 420 360">
+                                        <defs>
+                                            <radialGradient id="purpleGlow" cx="50%" cy="50%" r="50%">
+                                                <stop offset="0%" stop-color="#A5B4FC" />
+                                                <stop offset="70%" stop-color="#6366F1" />
+                                                <stop offset="100%" stop-color="#4F46E5" />
+                                            </radialGradient>
+                                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                                <feGaussianBlur stdDeviation="4" result="blur" />
+                                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                            </filter>
+                                            <style>
+                                                @keyframes flow {
+                                                    to { stroke-dashoffset: -20; }
+                                                }
+                                                .flow-line {
+                                                    stroke-dasharray: 5;
+                                                    animation: flow 1.2s linear infinite;
+                                                }
+                                            </style>
+                                        </defs>
+
+                                        <!-- Connection Line 1 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[0]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[0]; }">
+                                            <line x1="210" y1="180" x2="210" y2="60" stroke="#818CF8" stroke-width="2.5" class="flow-line"
+                                                  :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[0].item_id ? '#4F46E5' : '#818CF8'"
+                                                  :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[0].item_id ? 3.5 : 2" />
+                                            <rect x="192.5" y="110" width="35" height="16" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                            <text x="210" y="121" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[0] ? selectedNetworkItem.partners[0].confidence + '%' : ''"></text>
+                                        </g>
+
+                                        <!-- Connection Line 2 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[1]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[1]; }">
+                                            <line x1="210" y1="180" x2="330" y2="130" stroke="#818CF8" stroke-width="2.5" class="flow-line"
+                                                  :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[1].item_id ? '#4F46E5' : '#818CF8'"
+                                                  :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[1].item_id ? 3.5 : 2" />
+                                            <rect x="252.5" y="147" width="35" height="16" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                            <text x="270" y="158" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[1] ? selectedNetworkItem.partners[1].confidence + '%' : ''"></text>
+                                        </g>
+
+                                        <!-- Connection Line 3 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[2]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[2]; }">
+                                            <line x1="210" y1="180" x2="290" y2="270" stroke="#818CF8" stroke-width="2.5" class="flow-line"
+                                                  :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[2].item_id ? '#4F46E5' : '#818CF8'"
+                                                  :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[2].item_id ? 3.5 : 2" />
+                                            <rect x="232.5" y="217" width="35" height="16" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                            <text x="250" y="228" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[2] ? selectedNetworkItem.partners[2].confidence + '%' : ''"></text>
+                                        </g>
+
+                                        <!-- Connection Line 4 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[3]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[3]; }">
+                                            <line x1="210" y1="180" x2="130" y2="270" stroke="#818CF8" stroke-width="2.5" class="flow-line"
+                                                  :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[3].item_id ? '#4F46E5' : '#818CF8'"
+                                                  :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[3].item_id ? 3.5 : 2" />
+                                            <rect x="152.5" y="217" width="35" height="16" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                            <text x="170" y="228" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[3] ? selectedNetworkItem.partners[3].confidence + '%' : ''"></text>
+                                        </g>
+
+                                        <!-- Connection Line 5 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[4]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[4]; }">
+                                            <line x1="210" y1="180" x2="90" y2="130" stroke="#818CF8" stroke-width="2.5" class="flow-line"
+                                                  :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[4].item_id ? '#4F46E5' : '#818CF8'"
+                                                  :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[4].item_id ? 3.5 : 2" />
+                                            <rect x="132.5" y="147" width="35" height="16" rx="4" fill="#FFFFFF" stroke="#E2E8F0" />
+                                            <text x="150" y="158" fill="#4F46E5" class="text-[8px] font-black" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[4] ? selectedNetworkItem.partners[4].confidence + '%' : ''"></text>
+                                        </g>
+
+                                        <!-- Center Node (Selected Product) -->
+                                        <g class="cursor-pointer" @click="if (currentView === 'explorer') { selectedPartner = null; }">
+                                            <circle cx="210" cy="180" r="32" fill="url(#purpleGlow)" filter="url(#glow)" />
+                                            <circle cx="210" cy="180" r="28" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
+                                            <text x="210" y="183.5" fill="#FFFFFF" class="text-[9px] font-black" text-anchor="middle" x-text="selectedNetworkItem ? selectedNetworkItem.item_code : ''"></text>
+                                        </g>
+
+                                        <!-- Partner Node 1 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[0]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[0]; }">
+                                            <circle cx="210" cy="60" r="20" fill="#10B981"
+                                                    :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[0].item_id ? '#047857' : '#A7F3D0'"
+                                                    :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[0].item_id ? 3.5 : 1.5" />
+                                            <text x="210" y="63" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[0] ? selectedNetworkItem.partners[0].item_code : ''"></text>
+                                            <text x="210" y="32" fill="#334155" class="text-[9px] font-extrabold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[0] ? selectedNetworkItem.partners[0].item_name : ''"></text>
+                                        </g>
+
+                                        <!-- Partner Node 2 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[1]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[1]; }">
+                                            <circle cx="330" cy="130" r="20" fill="#0EA5E9"
+                                                    :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[1].item_id ? '#0369A1' : '#BAE6FD'"
+                                                    :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[1].item_id ? 3.5 : 1.5" />
+                                            <text x="330" y="133" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[1] ? selectedNetworkItem.partners[1].item_code : ''"></text>
+                                            <text x="330" y="102" fill="#334155" class="text-[9px] font-extrabold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[1] ? selectedNetworkItem.partners[1].item_name : ''"></text>
+                                        </g>
+
+                                        <!-- Partner Node 3 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[2]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[2]; }">
+                                            <circle cx="290" cy="270" r="20" fill="#F59E0B"
+                                                    :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[2].item_id ? '#B45309' : '#FDE68A'"
+                                                    :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[2].item_id ? 3.5 : 1.5" />
+                                            <text x="290" y="273" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[2] ? selectedNetworkItem.partners[2].item_code : ''"></text>
+                                            <text x="290" y="299" fill="#334155" class="text-[9px] font-extrabold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[2] ? selectedNetworkItem.partners[2].item_name : ''"></text>
+                                        </g>
+
+                                        <!-- Partner Node 4 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[3]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[3]; }">
+                                            <circle cx="130" cy="270" r="20" fill="#EC4899"
+                                                    :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[3].item_id ? '#BE185D' : '#FBCFE8'"
+                                                    :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[3].item_id ? 3.5 : 1.5" />
+                                            <text x="130" y="273" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[3] ? selectedNetworkItem.partners[3].item_code : ''"></text>
+                                            <text x="130" y="299" fill="#334155" class="text-[9px] font-extrabold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[3] ? selectedNetworkItem.partners[3].item_name : ''"></text>
+                                        </g>
+
+                                        <!-- Partner Node 5 -->
+                                        <g x-show="selectedNetworkItem && selectedNetworkItem.partners[4]" class="cursor-pointer"
+                                           @click="if (currentView === 'explorer') { selectedPartner = selectedNetworkItem.partners[4]; }">
+                                            <circle cx="90" cy="130" r="20" fill="#8B5CF6"
+                                                    :stroke="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[4].item_id ? '#6D28D9' : '#DDD6FE'"
+                                                    :stroke-width="selectedPartner && selectedPartner.item_id === selectedNetworkItem.partners[4].item_id ? 3.5 : 1.5" />
+                                            <text x="90" y="133" fill="#FFFFFF" class="text-[8px] font-bold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[4] ? selectedNetworkItem.partners[4].item_code : ''"></text>
+                                            <text x="90" y="102" fill="#334155" class="text-[9px] font-extrabold" text-anchor="middle" x-text="selectedNetworkItem && selectedNetworkItem.partners[4] ? selectedNetworkItem.partners[4].item_name : ''"></text>
+                                        </g>
+                                    </svg>
+                                </div>
+
+                                {{-- Legend --}}
+                                <div class="mt-4 flex flex-wrap items-center justify-center gap-6 p-3 bg-white border border-slate-50 rounded-2xl text-[10px] font-bold text-slate-550">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-3.5 h-3.5 rounded-full bg-purple-600 border-2 border-purple-300"></span>
+                                        <span>Selected Product</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+                                        <span>Partner Product</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 border-b-2 border-dashed border-indigo-400"></div>
+                                        <span>Association (Dashed Line)</span>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {{-- Selected Product Detail Panel Column --}}
+                            <div class="md:col-span-5 flex flex-col justify-between">
+                                
+                                {{-- Explorer View --}}
+                                <div x-show="currentView === 'explorer'" class="flex-auto flex flex-col justify-between">
+                                    
+                                    {{-- Default State: No partner clicked --}}
+                                    <div x-show="selectedPartner === null" class="flex flex-col items-center justify-center text-center p-8 bg-slate-50 border border-slate-100 rounded-3xl min-h-[350px]">
+                                        <svg class="w-12 h-12 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                                        <p class="text-sm font-bold text-slate-750 leading-snug">Click on any partner product to view detailed association metrics.</p>
+                                        <p class="text-[11px] text-slate-400 mt-1 max-w-[220px] leading-relaxed">Explore cross-selling probabilities, lift index, and purchase support.</p>
+                                    </div>
+
+                                    {{-- Partner Details State: Partner clicked --}}
+                                    <div x-show="selectedPartner !== null" class="space-y-6">
+                                        {{-- Selected Partner Title Block --}}
+                                        <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Selected Partner Product</p>
+                                            <span class="text-xs font-black text-emerald-600 uppercase tracking-wider block mt-1"
+                                                  x-text="selectedPartner ? selectedPartner.item_code : ''"></span>
+                                            <h4 class="text-sm font-bold text-slate-800 leading-snug mt-0.5"
+                                                x-text="selectedPartner ? selectedPartner.item_name : ''"></h4>
+                                        </div>
+
+                                        {{-- Association Details --}}
+                                        <div class="space-y-4">
+                                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Association Details</p>
+
+                                            <!-- Confidence Card -->
+                                            <div class="p-4 border border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow transition-shadow">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-505">Confidence</span>
+                                                    <span class="text-sm font-black text-emerald-600 tabular-nums" x-text="selectedPartner ? selectedPartner.confidence + '%' : ''"></span>
+                                                </div>
+                                                <p class="text-xs text-slate-505 mt-2 font-medium leading-relaxed">
+                                                    Probability that <span class="text-slate-700 font-bold" x-text="selectedPartner ? selectedPartner.item_name : ''"></span> is purchased when <span class="text-slate-700 font-bold" x-text="selectedNetworkItem ? selectedNetworkItem.item_name : ''"></span> is purchased.
+                                                </p>
+                                            </div>
+
+                                            <!-- Lift Card -->
+                                            <div class="p-4 border border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow transition-shadow">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-505">Lift</span>
+                                                    <span class="text-sm font-black text-indigo-600 tabular-nums" x-text="selectedPartner ? selectedPartner.lift + 'x' : ''"></span>
+                                                </div>
+                                                <p class="text-xs text-slate-505 mt-2 font-medium leading-relaxed">
+                                                    How much more likely <span class="text-slate-700 font-bold" x-text="selectedPartner ? selectedPartner.item_name : ''"></span> is purchased with <span class="text-slate-700 font-bold" x-text="selectedNetworkItem ? selectedNetworkItem.item_name : ''"></span>.
+                                                </p>
+                                            </div>
+
+                                            <!-- Support Card -->
+                                            <div class="p-4 border border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow transition-shadow">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-550">Support</span>
+                                                    <span class="text-sm font-black text-slate-700 tabular-nums" x-text="selectedPartner ? selectedPartner.support + '%' : ''"></span>
+                                                </div>
+                                                <p class="text-xs text-slate-505 mt-2 font-medium leading-relaxed">
+                                                    Frequency of <span class="text-slate-700 font-bold" x-text="selectedNetworkItem ? selectedNetworkItem.item_name : ''"></span> + <span class="text-slate-700 font-bold" x-text="selectedPartner ? selectedPartner.item_name : ''"></span> purchased together.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Bottom Buttons --}}
+                                    <div class="pt-4 mt-6 border-t border-slate-100 space-y-2.5">
+                                        <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-200 shadow-lg shadow-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer animate-none"
+                                                type="button"
+                                                :disabled="selectedPartner === null"
+                                                @click="openPromoForm()">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            {{ __('Create Combo Promotion') }}
+                                        </button>
+                                        <button class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-200 cursor-pointer animate-none"
+                                                type="button" @click="showNetworkModal = false">
+                                            {{ __('Close Explorer') }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Form View --}}
+                                <div x-show="currentView === 'form'" class="flex-auto flex flex-col justify-between" style="display: none;">
+                                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                                        <div class="p-4 bg-purple-50 border border-purple-100 rounded-2xl">
+                                            <p class="text-[8px] font-black uppercase tracking-widest text-purple-505">Combo Builder Mode</p>
+                                            <h4 class="text-sm font-bold text-slate-800 leading-snug mt-1">Configure Promotion Strategy</h4>
+                                        </div>
+
+                                        <div class="space-y-3 text-xs">
+                                            <!-- Promotion Name -->
+                                            <div>
+                                                <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">Promotion Name</label>
+                                                <input type="text" x-model="formPromoName" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 shadow-sm" required />
+                                            </div>
+
+                                            <!-- Readonly Fields Grid -->
+                                            <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                                                <div class="col-span-2">
+                                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Main Product</span>
+                                                    <span class="font-bold text-slate-700" x-text="selectedNetworkItem ? selectedNetworkItem.item_name : ''"></span>
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Partner Product</span>
+                                                    <span class="font-bold text-emerald-600" x-text="selectedPartner ? selectedPartner.item_name : ''"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Confidence</span>
+                                                    <span class="font-extrabold text-slate-700" x-text="selectedPartner ? selectedPartner.confidence + '%' : ''"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Support / Lift</span>
+                                                    <span class="font-extrabold text-slate-700" x-text="selectedPartner ? selectedPartner.support + '% / ' + selectedPartner.lift + 'x' : ''"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Editable Input Fields -->
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">Discount Type</label>
+                                                    <input type="text" x-model="formDiscountType" class="w-full px-4 py-2.5 bg-slate-100 border border-slate-100 rounded-xl font-bold text-slate-505 cursor-not-allowed" readonly />
+                                                </div>
+                                                <div>
+                                                    <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">Discount Value (5-15%)</label>
+                                                    <input type="number" min="5" max="15" x-model="formDiscountValue" class="w-full px-4 py-2.5 bg-white border border-slate-150 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700" required />
+                                                </div>
+                                                <div>
+                                                    <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">Start Date</label>
+                                                    <input type="date" x-model="formStartDate" @change="updateEndDate(formStartDate)" class="w-full px-4 py-2.5 bg-white border border-slate-150 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700" required />
+                                                </div>
+                                                <div>
+                                                    <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">End Date (Auto 2 Days)</label>
+                                                    <input type="date" x-model="formEndDate" class="w-full px-4 py-2.5 bg-slate-100 border border-slate-100 rounded-xl font-bold text-slate-550 cursor-not-allowed" readonly />
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <label class="block font-black text-[9px] uppercase tracking-wider text-slate-400 mb-1">Promotion Status</label>
+                                                    <select x-model="formStatus" class="w-full px-4 py-2.5 bg-white border border-slate-150 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700 cursor-pointer">
+                                                        <option value="Active">Active</option>
+                                                        <option value="Pending">Draft</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Save / Cancel / Back Buttons --}}
+                                    <div class="pt-4 border-t border-slate-100 space-y-2 mt-4">
+                                        <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer animate-none"
+                                                type="button"
+                                                :disabled="isSaving"
+                                                @click="submitPromo()">
+                                            <template x-if="isSaving">
+                                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </template>
+                                            <span x-text="isSaving ? 'Saving...' : 'Save Promotion'"></span>
+                                        </button>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <button class="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center animate-none"
+                                                    type="button"
+                                                    @click="currentView = 'explorer'">
+                                                Back
+                                            </button>
+                                            <button class="py-2.5 bg-slate-150 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center animate-none"
+                                                    type="button"
+                                                    @click="showNetworkModal = false">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </x-app-layout>

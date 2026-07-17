@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\SaleItem;
 use App\Services\AprioriService;
 use Carbon\Carbon;
@@ -17,8 +17,8 @@ class FiftySalesSeeder extends Seeder
      */
     public function run(): void
     {
-        $salesmanAriff = Salesman::where('email', 'ariff@dozee.com')->first();
-        $otherSalesmen = Salesman::where('email', '!=', 'ariff@dozee.com')->get();
+        $salesmenAriff = Salesmen::where('email', 'ariff@dozee.com')->first();
+        $otherSalesmen = Salesmen::where('email', '!=', 'ariff@dozee.com')->get();
         $products = Product::all();
 
         if ($products->isEmpty()) {
@@ -27,11 +27,11 @@ class FiftySalesSeeder extends Seeder
 
         // We will generate 50 sales
         for ($i = 0; $i < 50; $i++) {
-            // Determine salesman: 80% chance it is Ariff, otherwise a random other salesman
-            if ($salesmanAriff && ($otherSalesmen->isEmpty() || rand(1, 10) <= 8)) {
-                $salesmanId = $salesmanAriff->salesman_id;
+            // Determine salesmen: 80% chance it is Ariff, otherwise a random other salesmen
+            if ($salesmenAriff && ($otherSalesmen->isEmpty() || rand(1, 10) <= 8)) {
+                $salesmenId = $salesmenAriff->salesmen_id;
             } else {
-                $salesmanId = $otherSalesmen->random()->salesman_id;
+                $salesmenId = $otherSalesmen->random()->salesmen_id;
             }
 
             // Select 1 to 3 random products to form a basket
@@ -46,7 +46,7 @@ class FiftySalesSeeder extends Seeder
             // Create the sale with random date in last 30 days
             $saleDate = Carbon::now()->subDays(rand(1, 30))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
             $sale = Sale::create([
-                'salesman_id' => $salesmanId,
+                'salesmen_id' => $salesmenId,
                 'total_amount' => 0,
                 'sale_date' => $saleDate,
                 'status' => 'Approved', // Approved to make sure it shows up on dashboard

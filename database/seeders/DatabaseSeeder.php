@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         AprioriAnalysis::truncate();
         Product::truncate();
         Category::truncate();
-        Salesman::truncate();
+        Salesmen::truncate();
         Manager::truncate();
         DB::table('promotion_association_rule')->truncate();
 
@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2. Create Salesmen
-        $salesmanAlya = Salesman::create([
+        $salesmenAlya = Salesmen::create([
             'manager_id' => $manager->manager_id,
             'name' => 'Alya',
             'email' => 'alya@dozee.com',
@@ -57,7 +57,7 @@ class DatabaseSeeder extends Seeder
             'address' => 'No. 23, Jalan Merdeka, 50000 Kuala Lumpur',
         ]);
 
-        $salesmanDiana = Salesman::create([
+        $salesmenDiana = Salesmen::create([
             'manager_id' => $manager->manager_id,
             'name' => 'Diana',
             'email' => 'diana@dozee.com',
@@ -106,28 +106,28 @@ class DatabaseSeeder extends Seeder
         // 5. Seed sales transactions to establish Apriori buying patterns and metrics
         // We want multiple multi-item transactions to trigger Apriori rule generation:
         
-        // Salesman: Alya (transactions in last 60 days)
+        // Salesmen: Alya (transactions in last 60 days)
         // Pattern 1: Ultra White 10KG + Aroma Fabric Care Pink 25KG (15 times) - Approved
         for ($i = 0; $i < 15; $i++) {
-            $this->createTransaction($salesmanAlya->salesman_id, [$ultraWhite10, $fabricCarePink], now()->subDays(rand(1, 58)), 'Approved');
+            $this->createTransaction($salesmenAlya->salesmen_id, [$ultraWhite10, $fabricCarePink], now()->subDays(rand(1, 58)), 'Approved');
         }
         // Pattern 2: Apple Fresh 10KG + Stain Remover Pen (12 times) - Approved
         for ($i = 0; $i < 12; $i++) {
-            $this->createTransaction($salesmanAlya->salesman_id, [$appleFresh, $stainRemover], now()->subDays(rand(1, 58)), 'Approved');
+            $this->createTransaction($salesmenAlya->salesmen_id, [$appleFresh, $stainRemover], now()->subDays(rand(1, 58)), 'Approved');
         }
 
-        // Salesman: Diana
+        // Salesmen: Diana
         // Pattern 1: Ultra White 10KG + Aroma Fabric Care Pink 25KG (10 times) - Approved
         for ($i = 0; $i < 10; $i++) {
-            $this->createTransaction($salesmanDiana->salesman_id, [$ultraWhite10, $fabricCarePink], now()->subDays(rand(1, 58)), 'Approved');
+            $this->createTransaction($salesmenDiana->salesmen_id, [$ultraWhite10, $fabricCarePink], now()->subDays(rand(1, 58)), 'Approved');
         }
 
         // Noise/Random transactions (single items and mixed items)
         $allProdList = array_values($products);
-        foreach ([$salesmanAlya, $salesmanDiana] as $salesman) {
+        foreach ([$salesmenAlya, $salesmenDiana] as $salesmen) {
             for ($i = 0; $i < 20; $i++) {
                 $randomProds = collect($allProdList)->random(rand(1, 3))->all();
-                $this->createTransaction($salesman->salesman_id, $randomProds, now()->subDays(rand(1, 58)), 'Approved');
+                $this->createTransaction($salesmen->salesmen_id, $randomProds, now()->subDays(rand(1, 58)), 'Approved');
             }
         }
 
@@ -137,12 +137,12 @@ class DatabaseSeeder extends Seeder
         for ($i = 0; $i < 10; $i++) {
             $randomProds = collect($allProdList)->random(rand(1, 3))->all();
             $randomEvent = $events[array_rand($events)];
-            $this->createTransaction($salesmanAlya->salesman_id, $randomProds, now()->subDays(rand(1, 10)), 'Pending', $randomEvent);
+            $this->createTransaction($salesmenAlya->salesmen_id, $randomProds, now()->subDays(rand(1, 10)), 'Pending', $randomEvent);
         }
         for ($i = 0; $i < 5; $i++) {
             $randomProds = collect($allProdList)->random(rand(1, 3))->all();
             $randomEvent = $events[array_rand($events)];
-            $this->createTransaction($salesmanDiana->salesman_id, $randomProds, now()->subDays(rand(1, 10)), 'Pending', $randomEvent);
+            $this->createTransaction($salesmenDiana->salesmen_id, $randomProds, now()->subDays(rand(1, 10)), 'Pending', $randomEvent);
         }
 
         // 6. Run Apriori Analysis to generate the association rules in DB
@@ -194,9 +194,9 @@ class DatabaseSeeder extends Seeder
             $promoCombo2->associationRules()->sync([$rule2->rule_id]);
         }
 
-        // Promotion 4: Pending Salesman proposal
+        // Promotion 4: Pending Salesmen proposal
         Promotion::create([
-            'salesman_id' => $salesmanAlya->salesman_id,
+            'salesmen_id' => $salesmenAlya->salesmen_id,
             'promo_name' => 'Alya Care Proposal',
             'description' => 'Proposed bundle deal for Do\'Zee Blue Caring + Do\'Zee Laundry Net.',
             'start_date' => now()->format('Y-m-d'),
@@ -206,27 +206,27 @@ class DatabaseSeeder extends Seeder
 
         // 8. Seed some sales that explicitly use the promotions to populate performance charts
         // Transaction with single item promo
-        $this->createPromoTransaction($salesmanAlya->salesman_id, $ultraWhite10, $promoSingle, 2, now()->subDays(5), 'Approved');
-        $this->createPromoTransaction($salesmanDiana->salesman_id, $ultraWhite10, $promoSingle, 1, now()->subDays(3), 'Approved');
+        $this->createPromoTransaction($salesmenAlya->salesmen_id, $ultraWhite10, $promoSingle, 2, now()->subDays(5), 'Approved');
+        $this->createPromoTransaction($salesmenDiana->salesmen_id, $ultraWhite10, $promoSingle, 1, now()->subDays(3), 'Approved');
         // Pending promo transaction
-        $this->createPromoTransaction($salesmanAlya->salesman_id, $ultraWhite10, $promoSingle, 1, now(), 'Pending');
+        $this->createPromoTransaction($salesmenAlya->salesmen_id, $ultraWhite10, $promoSingle, 1, now(), 'Pending');
 
         // Transactions with combo promos
         if ($rule1) {
-            $this->createBundleTransaction($salesmanAlya->salesman_id, [$ultraWhite10, $fabricCarePink], $promoCombo1, now()->subDays(4), 'Approved');
-            $this->createBundleTransaction($salesmanDiana->salesman_id, [$ultraWhite10, $fabricCarePink], $promoCombo1, now()->subDays(2), 'Approved');
+            $this->createBundleTransaction($salesmenAlya->salesmen_id, [$ultraWhite10, $fabricCarePink], $promoCombo1, now()->subDays(4), 'Approved');
+            $this->createBundleTransaction($salesmenDiana->salesmen_id, [$ultraWhite10, $fabricCarePink], $promoCombo1, now()->subDays(2), 'Approved');
         }
         if ($rule2) {
-            $this->createBundleTransaction($salesmanAlya->salesman_id, [$appleFresh, $stainRemover], $promoCombo2, now()->subDays(6), 'Approved');
+            $this->createBundleTransaction($salesmenAlya->salesmen_id, [$appleFresh, $stainRemover], $promoCombo2, now()->subDays(6), 'Approved');
         }
 
         $this->call(DetergentProductSeeder::class);
     }
 
-    private function createTransaction(int $salesmanId, array $products, $date, $status = 'Pending', $eventName = null): void
+    private function createTransaction(int $salesmenId, array $products, $date, $status = 'Pending', $eventName = null): void
     {
         $sale = Sale::create([
-            'salesman_id' => $salesmanId,
+            'salesmen_id' => $salesmenId,
             'total_amount' => 0,
             'sale_date' => $date,
             'status' => $status,
@@ -252,10 +252,10 @@ class DatabaseSeeder extends Seeder
         $sale->update(['total_amount' => $total]);
     }
 
-    private function createPromoTransaction(int $salesmanId, Product $product, Promotion $promo, int $qty, $date, $status = 'Pending'): void
+    private function createPromoTransaction(int $salesmenId, Product $product, Promotion $promo, int $qty, $date, $status = 'Pending'): void
     {
         $sale = Sale::create([
-            'salesman_id' => $salesmanId,
+            'salesmen_id' => $salesmenId,
             'total_amount' => 0,
             'sale_date' => $date,
             'status' => $status,
@@ -274,10 +274,10 @@ class DatabaseSeeder extends Seeder
         $sale->update(['total_amount' => $discountedPrice * $qty]);
     }
 
-    private function createBundleTransaction(int $salesmanId, array $products, Promotion $promo, $date, $status = 'Pending'): void
+    private function createBundleTransaction(int $salesmenId, array $products, Promotion $promo, $date, $status = 'Pending'): void
     {
         $sale = Sale::create([
-            'salesman_id' => $salesmanId,
+            'salesmen_id' => $salesmenId,
             'total_amount' => 0,
             'sale_date' => $date,
             'status' => $status,

@@ -27,7 +27,7 @@ return [
             'driver' => 'session',
             'provider' => 'managers',
         ],
-        'salesman' => [
+        'salesmen' => [
             'driver' => 'session',
             'provider' => 'salesmen',
         ],
@@ -44,7 +44,7 @@ return [
         ],
         'salesmen' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Salesman::class,
+            'model' => App\Models\Salesmen::class,
         ],
     ],
 

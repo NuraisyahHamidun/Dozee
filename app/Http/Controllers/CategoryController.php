@@ -14,7 +14,7 @@ class CategoryController extends Controller
             abort(403);
         }
 
-        $categories = Category::withCount('products')->paginate(10);
+        $categories = Category::withCount('products')->paginate(7);
         return view('categories.index', compact('categories'));
     }
 

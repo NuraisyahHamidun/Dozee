@@ -26,12 +26,12 @@
                 <span class="p-2 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </span>
-                {{ __('Staff List') }}
+                {{ __('Salesmen List') }}
             </h2>
             @if(Auth::guard('manager')->check())
                 <a href="{{ route('accounts.create') }}" class="btn-primary flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    {{ __('Add New Staff') }}
+                    {{ __('Add New Salesmen') }}
                 </a>
             @endif
         </div>
@@ -84,11 +84,11 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-50 dark:border-slate-700/50">
-                            <a href="{{ route('accounts.edit', $salesman->salesman_id) }}" class="p-2 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
+                         <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-50 dark:border-slate-700/50">
+                            <a href="{{ route('accounts.edit', $salesman->salesmen_id) }}" class="p-2 text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </a>
-                            <form action="{{ route('accounts.destroy', $salesman->salesman_id) }}" method="POST" onsubmit="return confirm('Remove access?');">
+                            <form action="{{ route('accounts.destroy', $salesman->salesmen_id) }}" method="POST" onsubmit="return confirm('Remove access?');">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="p-2 text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -97,7 +97,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs italic">No staff found.</div>
+                    <div class="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs italic">No salesmen found.</div>
                 @endforelse
             </div>
 
@@ -190,10 +190,10 @@
                                     {{-- Actions --}}
                                     <td class="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end gap-3 transition-all duration-300">
-                                            <a href="{{ route('accounts.edit', $salesman->salesman_id) }}" class="p-2 bg-indigo-600 text-white hover:bg-indigo-700 border border-transparent rounded-xl transition-all shadow-md shadow-indigo-100" title="Edit">
+                                            <a href="{{ route('accounts.edit', $salesman->salesmen_id) }}" class="p-2 bg-indigo-600 text-white hover:bg-indigo-700 border border-transparent rounded-xl transition-all shadow-md shadow-indigo-100" title="Edit">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                             </a>
-                                            <form action="{{ route('accounts.destroy', $salesman->salesman_id) }}" method="POST" class="delete-staff-form">
+                                            <form action="{{ route('accounts.destroy', $salesman->salesmen_id) }}" method="POST" class="delete-staff-form">
                                                 @csrf @method('DELETE')
                                                 <button type="button" class="delete-staff-btn p-2 bg-rose-600 text-white hover:bg-rose-700 border border-transparent rounded-xl transition-all shadow-md shadow-rose-100" title="Remove"
                                                     data-name="{{ $salesman->name }}">
@@ -221,7 +221,7 @@
                     const staffName = this.getAttribute('data-name');
                     const form = this.closest('.delete-staff-form');
                     Swal.fire({
-                        title: 'Remove Staff?',
+                        title: 'Remove Salesmen?',
                         html: `<p style="font-size:0.85rem;color:#64748b;">You are about to remove <strong>${staffName}</strong>.<br>This action <strong>cannot be undone</strong>.</p>`,
                         icon: 'warning',
                         iconColor: '#ef4444',

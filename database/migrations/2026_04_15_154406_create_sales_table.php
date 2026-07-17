@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('sales_transactions', function (Blueprint $table) {
             $table->id('transaction_id');
-            $table->foreignId('salesman_id')->constrained('salesmen', 'salesman_id')->cascadeOnDelete();
+            $table->foreignId('salesmen_id')->constrained('salesmen', 'salesmen_id')->cascadeOnDelete();
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->timestamp('sale_date')->useCurrent();
             $table->timestamps();

@@ -7,7 +7,7 @@
                 </span>
                 {{ __('Sales Records') }}
             </h2>
-            @if(Auth::guard('salesman')->check())
+            @if(Auth::guard('salesmen')->check())
                 <a href="{{ route('sales.create') }}" class="btn-primary flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     {{ __('Add New Sale') }}
@@ -27,7 +27,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </span>
-                            <input id="search" name="search" type="text" value="{{ request('search') }}" placeholder="Search by Sale ID or Staff Name..." class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200" />
+                            <input id="search" name="search" type="text" value="{{ request('search') }}" placeholder="Search by Sale ID or Salesmen Name..." class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200" />
                         </div>
                     </div>
                     <div class="md:col-span-2 flex gap-3">
@@ -67,11 +67,11 @@
                         </div>
                         
                         <div class="flex flex-col gap-2 pt-2 border-t border-slate-50 dark:border-slate-700/50">
-                            <div class="text-[10px] text-slate-400"><span class="font-bold uppercase">Ante Create:</span> {{ $sale->ante_create ? $sale->ante_create->format('d M Y, H:i A') : '-' }}</div>
+                            <div class="text-[10px] text-slate-400"><span class="font-bold uppercase">Date Create:</span> {{ $sale->date_create ? $sale->date_create->format('d M Y, H:i A') : '-' }}</div>
                             <div class="text-[10px] text-slate-400"><span class="font-bold uppercase">Modified:</span> {{ $sale->date_modifier ? $sale->date_modifier->format('d M Y, H:i A') : '-' }}</div>
                             <div class="text-[10px] text-slate-400"><span class="font-bold uppercase">Verified:</span> {{ $sale->date_verify ? $sale->date_verify->format('d M Y, H:i A') : '-' }}</div>
                             @if(Auth::guard('manager')->check())
-                                <div class="text-[10px] text-slate-400 font-medium uppercase tracking-tight italic">Sold by {{ $sale->salesman->name }}</div>
+                                <div class="text-[10px] text-slate-400 font-medium uppercase tracking-tight italic">Sold by {{ $sale->salesmen->name }}</div>
                             @endif
                         </div>
 
@@ -135,7 +135,7 @@
                                 <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Sale ID</th>
                                 <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                 <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Ante Create</th>
-                                <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Modifier (Staff)</th>
+                                <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Modifier (Salesmen)</th>
                                 <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Verify (Manager)</th>
                                 @if(Auth::guard('manager')->check())
                                     <th scope="col" class="px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Sold by</th>
@@ -170,9 +170,9 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-6 whitespace-nowrap">
-                                        @if($sale->ante_create)
-                                            <div class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ $sale->ante_create->format('d M Y') }}</div>
-                                            <div class="text-[10px] text-slate-400 font-medium tracking-tight uppercase">{{ $sale->ante_create->format('H:i A') }}</div>
+                                        @if($sale->date_create)
+                                            <div class="text-xs font-bold text-slate-600 dark:text-slate-300">{{ $sale->date_create->format('d M Y') }}</div>
+                                            <div class="text-[10px] text-slate-400 font-medium tracking-tight uppercase">{{ $sale->date_create->format('H:i A') }}</div>
                                         @else
                                             <span class="text-slate-400 text-xs font-bold">-</span>
                                         @endif
@@ -197,9 +197,9 @@
                                         <td class="px-6 py-6 whitespace-nowrap">
                                             <div class="flex items-center gap-3">
                                                 <div class="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-xs font-black text-indigo-500">
-                                                    {{ substr($sale->salesman->name, 0, 1) }}
+                                                    {{ substr($sale->salesmen->name, 0, 1) }}
                                                 </div>
-                                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ $sale->salesman->name }}</span>
+                                                <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ $sale->salesmen->name }}</span>
                                             </div>
                                         </td>
                                     @endif

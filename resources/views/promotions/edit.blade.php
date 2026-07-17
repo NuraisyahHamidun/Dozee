@@ -36,10 +36,8 @@
                                     <div class="md:col-span-1">
                                         <x-input-label for="status" :value="__('Operational Status')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
                                         <select id="status" name="status" class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-bold text-slate-700 dark:text-slate-200 shadow-inner appearance-none cursor-pointer">
-                                            <option value="Pending" {{ old('status', $promotion->status) == 'Pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="Active" {{ old('status', $promotion->status) == 'Active' ? 'selected' : '' }}>Active</option>
-                                            <option value="Expired" {{ old('status', $promotion->status) == 'Expired' ? 'selected' : '' }}>Expired</option>
-                                            <option value="Rejected" {{ old('status', $promotion->status) == 'Rejected' ? 'selected' : '' }}>Rejected</option>
+                                            <option value="Pending" {{ old('status', $promotion->status) == 'Pending' ? 'selected' : '' }}>Draft</option>
                                         </select>
                                         <x-input-error class="mt-2" :messages="$errors->get('status')" />
                                     </div>
@@ -73,9 +71,9 @@
                             </div>
 
                             <div class="flex items-center justify-end gap-4 pt-6 border-t border-slate-100 dark:border-slate-700/50">
-                                <a href="{{ route('promotions.index') }}" class="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Discard Changes</a>
+                                <a href="{{ route('promotions.index') }}" class="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</a>
                                 <button type="submit" class="bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.2em] px-8 py-4 rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
-                                    Commit Refinements
+                                    Save Changes
                                 </button>
                             </div>
                         </form>
@@ -85,19 +83,23 @@
                 <!-- Guidance Sidebar -->
                 <div class="lg:col-span-4 space-y-8">
                     @if($promotion->analysis)
-                        <div class="premium-card p-8 bg-indigo-600 text-white shadow-xl shadow-indigo-100 dark:shadow-none">
-                            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 mb-6 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <div class="premium-card p-8 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-indigo-100/10 dark:shadow-none">
+                            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 Associated Data Rule
                             </h4>
                             <div class="space-y-4">
-                                <div class="p-4 bg-white/10 rounded-2xl border border-white/10">
-                                    <span class="block text-[8px] font-black uppercase tracking-widest text-indigo-200 mb-1">Market Connection</span>
-                                    <p class="text-sm font-black">{{ $promotion->analysis->antecedent }} <span class="mx-1 opacity-50">→</span> {{ $promotion->analysis->consequent }}</p>
+                                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
+                                    <span class="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Market Connection</span>
+                                    <p class="text-sm font-black text-slate-800 dark:text-slate-200">
+                                        {{ $promotion->analysis->antecedentProduct->item_name ?? 'Item' }}
+                                        <span class="mx-1 text-indigo-500">→</span>
+                                        {{ $promotion->analysis->consequentProduct->item_name ?? 'Item' }}
+                                    </p>
                                 </div>
-                                <div class="p-4 bg-white/10 rounded-2xl border border-white/10">
-                                    <span class="block text-[8px] font-black uppercase tracking-widest text-indigo-200 mb-1">Confidence Score</span>
-                                    <p class="text-sm font-black">{{ number_format($promotion->analysis->confidence * 100, 1) }}% Factor</p>
+                                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm">
+                                    <span class="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Confidence Score</span>
+                                    <p class="text-sm font-black text-slate-800 dark:text-slate-200">{{ number_format($promotion->analysis->confidence * 100, 1) }}% Confidence</p>
                                 </div>
                             </div>
                         </div>

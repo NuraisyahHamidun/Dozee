@@ -23,7 +23,7 @@
                             <div class="md:col-span-1">
                                 <x-input-label for="promo_name" :value="__('Promotion Title')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
                                 <input id="promo_name" name="promo_name" type="text" 
-                                       value="{{ old('promo_name') }}" 
+                                       value="{{ old('promo_name', $default_promo_name ?? '') }}" 
                                        class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-bold text-slate-700 dark:text-slate-200 shadow-inner" 
                                        required autofocus placeholder="e.g. Raya Roadshow Special Bundle" />
                                 <x-input-error class="mt-2" :messages="$errors->get('promo_name')" />
@@ -35,8 +35,8 @@
                                     <x-input-label for="status" :value="__('Launch Status')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
                                     <div class="relative">
                                         <select id="status" name="status" class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-bold text-slate-700 dark:text-slate-200 shadow-inner appearance-none cursor-pointer">
-                                            <option value="Active" selected>Ready to Launch</option>
-                                            <option value="Expired">Archived</option>
+                                            <option value="Active" selected>Active</option>
+                                            <option value="Pending">Draft</option>
                                         </select>
                                         <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -68,7 +68,7 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[320px] overflow-y-auto pr-2" id="bundleContainer" style="scrollbar-width: thin; scrollbar-color: #c7d2fe transparent;">
                                 @foreach($allRules as $r)
-                                    <label class="bundle-item relative flex items-start p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border-2 border-transparent hover:border-indigo-200 transition-all cursor-pointer group" data-search="{{ strtolower(($products[$r->antecedent] ?? 'Item A') . ' ' . ($products[$r->consequent] ?? 'Item B') . ' ' . number_format($r->confidence * 100, 0) . '% ' . number_format($r->lift, 2) . 'x') }}">
+                                    <label class="bundle-item relative flex items-start p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border-2 border-transparent hover:border-indigo-200 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50/50 transition-all cursor-pointer group" data-search="{{ strtolower(($products[$r->antecedent] ?? 'Item A') . ' ' . ($products[$r->consequent] ?? 'Item B') . ' ' . number_format($r->confidence * 100, 0) . '% ' . number_format($r->lift, 2) . 'x') }}">
                                         <div class="flex items-center h-5 mr-3">
                                             <input type="checkbox" name="rule_ids[]" value="{{ $r->rule_id }}" 
                                                    {{ $rule_id == $r->rule_id ? 'checked' : '' }}
@@ -93,8 +93,33 @@
                             <x-input-label for="description" :value="__('Promotion Strategy')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
                             <textarea id="description" name="description" rows="4" 
                                       class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200 shadow-inner" 
-                                      placeholder="Explain the goal of this event bundle...">{{ old('description') }}</textarea>
+                                      placeholder="Explain the goal of this event bundle...">{{ old('description', $default_description ?? '') }}</textarea>
                             <x-input-error class="mt-2" :messages="$errors->get('description')" />
+                        </div>
+
+                        <!-- Discount Setting -->
+                        <div>
+                            <h3 class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-4">Discount Setting</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <x-input-label for="discount_type" :value="__('Discount Type')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
+                                    <select id="discount_type" disabled class="w-full px-5 py-4 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl text-sm font-bold text-slate-500 dark:text-slate-400 shadow-inner cursor-not-allowed">
+                                        <option value="Percentage">Percentage (%)</option>
+                                    </select>
+                                    <input type="hidden" name="discount_type" value="Percentage">
+                                    <x-input-error class="mt-2" :messages="$errors->get('discount_type')" />
+                                </div>
+                                <div>
+                                    <x-input-label for="discount_value" :value="__('Discount Value')" class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2" />
+                                    <input id="discount_value" name="discount_value" type="number" step="0.01" min="0" placeholder="e.g. 10"
+                                           value="{{ old('discount_value') }}"
+                                           class="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200 shadow-inner" 
+                                           required />
+                                    <x-input-error class="mt-2" :messages="$errors->get('discount_value')" />
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2.5 italic">This discount will be applied to all selected product bundles in this event promotion.</p>
+                            <input type="hidden" name="discount_apply_to" value="all_selected_bundles">
                         </div>
 
                         <!-- Availability Period -->

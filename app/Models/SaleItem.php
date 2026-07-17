@@ -12,7 +12,7 @@ class SaleItem extends Model
     protected $table = 'transaction_detail';
     protected $primaryKey = 'detail_id';
 
-    protected $fillable = ['transaction_id', 'item_id', 'promo_id', 'quantity'];
+    protected $fillable = ['transaction_id', 'item_id', 'promo_id', 'bundle_group_id', 'quantity'];
 
     public function sale()
     {

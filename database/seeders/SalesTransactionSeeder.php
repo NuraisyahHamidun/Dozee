@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\DB;
 use App\Services\AprioriService;
@@ -27,8 +27,8 @@ class SalesTransactionSeeder extends Seeder
         
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $salesman = Salesman::first();
-        if (!$salesman) {
+        $salesmen = Salesmen::first();
+        if (!$salesmen) {
             return;
         }
 
@@ -47,31 +47,31 @@ class SalesTransactionSeeder extends Seeder
         // Pattern 1: Ultra White + Aroma Fabric Care Pink (Common pair)
         // 12 transactions
         for ($i = 0; $i < 12; $i++) {
-            $this->createSale($salesman->salesman_id, [$ultraWhite, $fabricPink]);
+            $this->createSale($salesmen->salesmen_id, [$ultraWhite, $fabricPink]);
         }
 
         // Pattern 2: Dish Wash + Floor Cleaner (Common pair)
         // 10 transactions
         for ($i = 0; $i < 10; $i++) {
-            $this->createSale($salesman->salesman_id, [$dishWash, $floorCleaner]);
+            $this->createSale($salesmen->salesmen_id, [$dishWash, $floorCleaner]);
         }
 
         // Pattern 3: Car Shampoo + Engine Chemical
         // 8 transactions
         for ($i = 0; $i < 8; $i++) {
-            $this->createSale($salesman->salesman_id, [$carShampoo, $engineChem]);
+            $this->createSale($salesmen->salesmen_id, [$carShampoo, $engineChem]);
         }
 
         // Pattern 4: Floor Cleaner + Bleach
         // 6 transactions
         for ($i = 0; $i < 6; $i++) {
-            $this->createSale($salesman->salesman_id, [$floorCleaner, $bleach]);
+            $this->createSale($salesmen->salesmen_id, [$floorCleaner, $bleach]);
         }
 
         // Random single items to add noise
         $allProducts = Product::all();
         for ($i = 0; $i < 10; $i++) {
-            $this->createSale($salesman->salesman_id, [$allProducts->random()]);
+            $this->createSale($salesmen->salesmen_id, [$allProducts->random()]);
         }
 
         // Run Apriori Analysis to generate the buying patterns
@@ -79,10 +79,10 @@ class SalesTransactionSeeder extends Seeder
         $service->run();
     }
 
-    private function createSale($salesmanId, $products)
+    private function createSale($salesmenId, $products)
     {
         $sale = Sale::create([
-            'salesman_id' => $salesmanId,
+            'salesmen_id' => $salesmenId,
             'total_amount' => 0,
             'sale_date' => now()->subDays(rand(1, 60)),
         ]);

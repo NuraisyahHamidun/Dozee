@@ -21,7 +21,7 @@
                 </form>
             </div>
             <div class="flex items-center gap-4">
-                @if(Auth::guard('manager')->check() || Auth::guard('salesman')->check())
+                @if(Auth::guard('manager')->check() || Auth::guard('salesmen')->check())
                     <a href="{{ route('promotions.create') }}" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none flex items-center gap-2 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         {{ Auth::guard('manager')->check() ? __('Create New Promotion') : __('Suggest New Promotion') }}
@@ -93,7 +93,7 @@
                                 ][$promotion->status] ?? 'bg-slate-50 text-slate-500';
                             @endphp
                             <span class="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full {{ $statusStyle }}">
-                                {{ $promotion->status }}
+                                {{ $promotion->status === 'Pending' ? 'Draft' : $promotion->status }}
                             </span>
                         </div>
                         
@@ -118,10 +118,20 @@
                             <span class="text-[10px] font-medium text-slate-400">{{ $promotion->start_date }} → {{ $promotion->end_date }}</span>
                             <div class="flex items-center gap-3">
                                 @if(Auth::guard('manager')->check() && $promotion->status === 'Pending')
-                                    <form action="{{ route('promotions.approve', $promotion) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="text-emerald-600 font-black text-[10px] uppercase tracking-widest">Approve</button>
-                                    </form>
+                                    <div class="flex items-center gap-2">
+                                        <form action="{{ route('promotions.approve', $promotion) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-emerald-600 font-black text-[10px] uppercase tracking-widest">
+                                                {{ $promotion->salesmen_id ? __('Approve') : __('Activate') }}
+                                            </button>
+                                        </form>
+                                        @if($promotion->salesmen_id)
+                                            <form action="{{ route('promotions.reject', $promotion) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-rose-600 font-black text-[10px] uppercase tracking-widest ml-2" onclick="return confirm('Reject this proposal?')">Reject</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 @endif
                                 @if(Auth::guard('manager')->check())
                                     <a href="{{ route('promotions.edit', $promotion) }}" class="text-indigo-600">
@@ -140,6 +150,11 @@
                 @empty
                     <div class="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs italic">No active promotions found.</div>
                 @endforelse
+            </div>
+
+            <!-- Mobile Pagination Links -->
+            <div class="mt-4 md:hidden">
+                {{ $promotions->links() }}
             </div>
 
             <!-- Desktop Table Layout (Hidden on Mobile) -->
@@ -205,18 +220,28 @@
                                             ][$promotion->status] ?? 'bg-slate-50 text-slate-500';
                                         @endphp
                                         <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full {{ $statusStyle }}">
-                                            {{ $promotion->status }}
+                                            {{ $promotion->status === 'Pending' ? 'Draft' : $promotion->status }}
                                         </span>
                                     </td>
                                     @if(Auth::guard('manager')->check())
                                         <td class="px-6 py-6 text-right">
                                             <div class="flex items-center justify-end gap-3">
-                                                @if($promotion->status === 'Pending')
-                                                    <form action="{{ route('promotions.approve', $promotion) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100">Approve</button>
-                                                    </form>
-                                                @endif
+                                                 @if($promotion->status === 'Pending')
+                                                     <div class="flex items-center gap-1.5">
+                                                         <form action="{{ route('promotions.approve', $promotion) }}" method="POST" class="inline">
+                                                             @csrf
+                                                             <button type="submit" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100">
+                                                                 {{ $promotion->salesmen_id ? __('Approve') : __('Activate') }}
+                                                             </button>
+                                                         </form>
+                                                         @if($promotion->salesmen_id)
+                                                             <form action="{{ route('promotions.reject', $promotion) }}" method="POST" class="inline">
+                                                                 @csrf
+                                                                 <button type="submit" class="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-100" onclick="return confirm('Reject this proposal?')">Reject</button>
+                                                             </form>
+                                                         @endif
+                                                     </div>
+                                                 @endif
                                                 <a href="{{ route('promotions.edit', $promotion) }}" class="p-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl transition-all border border-transparent shadow-md shadow-indigo-100">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </a>
@@ -237,6 +262,9 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+                <div class="px-6 py-4 border-t border-slate-50 dark:border-slate-700/50">
+                    {{ $promotions->links() }}
                 </div>
             </div>
 

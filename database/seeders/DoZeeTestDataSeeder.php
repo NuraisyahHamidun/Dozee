@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -24,7 +24,7 @@ use App\Services\AprioriService;
  * system that covers every Step 1–6 function:
  *
  *   Step 1  – Products & Categories
- *   Step 2  – Promotions (single-item, bundle, pending salesman proposal)
+ *   Step 2  – Promotions (single-item, bundle, pending salesmen proposal)
  *   Step 3  – Sales transactions (approved / pending / rejected)
  *   Step 4  – Approval workflow   (pending transactions for manager to act on)
  *   Step 5  – Apriori rules       (pre-computed + re-runnable via AprioriService)
@@ -37,7 +37,7 @@ class DoZeeTestDataSeeder extends Seeder
 {
     // ── tuneable constants ────────────────────────────────────────────────────
     private const APPROVED_PATTERN_REPS  = 18; // how many times each strong pair repeats
-    private const RANDOM_NOISE_PER_USER  = 25; // random single/multi-item sales per salesman
+    private const RANDOM_NOISE_PER_USER  = 25; // random single/multi-item sales per salesmen
     private const PENDING_COUNT          = 8;  // pending-approval sales to seed
     private const REJECTED_COUNT         = 4;  // rejected sales to seed
     private const HISTORY_DAYS          = 180; // look-back window for approved sales
@@ -54,7 +54,7 @@ class DoZeeTestDataSeeder extends Seeder
      * Stock is decremented and status set to 'Approved'.
      */
     private function makeSale(
-        int      $salesmanId,
+        int      $salesmenId,
         array    $products,        // array of Product models
         Carbon   $date,
         string   $status = 'Approved',
@@ -62,12 +62,12 @@ class DoZeeTestDataSeeder extends Seeder
         ?string  $eventName = null
     ): Sale {
         $sale = Sale::create([
-            'salesman_id' => $salesmanId,
+            'salesmen_id' => $salesmenId,
             'event_name'  => $eventName,
             'total_amount' => 0,
             'sale_date'   => $date,
             'status'      => $status,
-            'ante_create' => $date,
+            'date_create' => $date,
             'date_modifier' => $status !== 'Pending' ? $date->copy()->addMinutes(rand(5, 60)) : null,
             'date_verify'  => $status === 'Approved' ? $date->copy()->addMinutes(rand(61, 120)) : null,
         ]);
@@ -108,7 +108,7 @@ class DoZeeTestDataSeeder extends Seeder
         AprioriAnalysis::truncate();
         Product::truncate();
         Category::truncate();
-        Salesman::truncate();
+        Salesmen::truncate();
         Manager::truncate();
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -121,7 +121,7 @@ class DoZeeTestDataSeeder extends Seeder
             'address'    => 'No. 12, Jalan Maju, 50480 Kuala Lumpur',
         ]);
 
-        $alya = Salesman::create([
+        $alya = Salesmen::create([
             'manager_id' => $manager->manager_id,
             'name'       => 'Alya',
             'email'      => 'alya@dozee.com',
@@ -130,7 +130,7 @@ class DoZeeTestDataSeeder extends Seeder
             'address'    => 'No. 23, Jalan Merdeka, 50000 Kuala Lumpur',
         ]);
 
-        $diana = Salesman::create([
+        $diana = Salesmen::create([
             'manager_id' => $manager->manager_id,
             'name'       => 'Diana',
             'email'      => 'diana@dozee.com',
@@ -139,7 +139,7 @@ class DoZeeTestDataSeeder extends Seeder
             'address'    => 'No. 45, Jalan Bunga, 51000 Kuala Lumpur',
         ]);
 
-        $salesmen = [$alya, $diana];
+        $salesmenList = [$alya, $diana];
 
         // ── 2. CATEGORIES ────────────────────────────────────────────────────
         $catDetergent  = Category::create(['name' => 'Laundry Detergent']);
@@ -328,7 +328,7 @@ class DoZeeTestDataSeeder extends Seeder
         for ($i = 0; $i < self::APPROVED_PATTERN_REPS; $i++) {
             $qty1 = rand(1, 3);
             $qty2 = rand(1, 2);
-            $this->makeSale($alya->salesman_id, [
+            $this->makeSale($alya->salesmen_id, [
                 [$ultraWhite10, $qty1],
                 [$fabricPink,   $qty2],
             ], $this->randDate(self::HISTORY_DAYS));
@@ -336,7 +336,7 @@ class DoZeeTestDataSeeder extends Seeder
 
         // -- Pattern A (Diana) --
         for ($i = 0; $i < (int)(self::APPROVED_PATTERN_REPS * 0.7); $i++) {
-            $this->makeSale($diana->salesman_id, [
+            $this->makeSale($diana->salesmen_id, [
                 [$ultraWhite10, rand(1, 3)],
                 [$fabricPink,   rand(1, 2)],
             ], $this->randDate(self::HISTORY_DAYS));
@@ -344,8 +344,8 @@ class DoZeeTestDataSeeder extends Seeder
 
         // -- Pattern B (both) --
         for ($i = 0; $i < self::APPROVED_PATTERN_REPS; $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$dishWash,    rand(1, 4)],
                 [$floorCleaner, rand(1, 2)],
             ], $this->randDate(self::HISTORY_DAYS));
@@ -353,8 +353,8 @@ class DoZeeTestDataSeeder extends Seeder
 
         // -- Pattern C: Blue Caring + Stain Remover + Bleach (3-item bundle) --
         for ($i = 0; $i < (int)(self::APPROVED_PATTERN_REPS * 0.8); $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$blueCaring,   rand(1, 2)],
                 [$stainRemover, rand(1, 3)],
                 [$bleach,       rand(1, 2)],
@@ -362,20 +362,20 @@ class DoZeeTestDataSeeder extends Seeder
         }
 
         // -- Extra single/mixed noise --
-        foreach ($salesmen as $salesman) {
+        foreach ($salesmenList as $salesmenInstance) {
             for ($i = 0; $i < self::RANDOM_NOISE_PER_USER; $i++) {
                 $pick  = collect($allProducts)->random(rand(1, 3))->all();
                 $items = array_map(fn($p) => [$p, rand(1, 3)], $pick);
-                $this->makeSale($salesman->salesman_id, $items, $this->randDate(self::HISTORY_DAYS));
+                $this->makeSale($salesmenInstance->salesmen_id, $items, $this->randDate(self::HISTORY_DAYS));
             }
         }
 
         // -- Event-named sales (tests event_name filtering) --
         $events = ['Raya Promotion', 'Year-End Sale', 'Mid-Year Clearance'];
         foreach ($events as $eventName) {
-            foreach ($salesmen as $salesman) {
+            foreach ($salesmenList as $salesmenInstance) {
                 for ($i = 0; $i < 5; $i++) {
-                    $this->makeSale($salesman->salesman_id, [
+                    $this->makeSale($salesmenInstance->salesmen_id, [
                         [$ultraWhite10, rand(1, 2)],
                         [$pinkSoft,     rand(1, 2)],
                     ], $this->randDate(60), 'Approved', null, $eventName);
@@ -467,9 +467,9 @@ class DoZeeTestDataSeeder extends Seeder
             'status'      => 'Expired',
         ]);
 
-        // Promo 7 – Pending salesman proposal (tests workflow Step 4)
+        // Promo 7 – Pending salesmen proposal (tests workflow Step 4)
         Promotion::create([
-            'salesman_id' => $alya->salesman_id,
+            'salesmen_id' => $alya->salesmen_id,
             'promo_name'  => 'Alya – Sporty Starter Pack',
             'description' => 'Proposed: Red Sporty 10KG + Laundry Net Bag bundle deal.',
             'start_date'  => Carbon::now()->format('Y-m-d'),
@@ -477,9 +477,9 @@ class DoZeeTestDataSeeder extends Seeder
             'status'      => 'Pending',
         ]);
 
-        // Promo 8 – Pending salesman proposal (second for manager queue)
+        // Promo 8 – Pending salesmen proposal (second for manager queue)
         Promotion::create([
-            'salesman_id' => $diana->salesman_id,
+            'salesmen_id' => $diana->salesmen_id,
             'promo_name'  => 'Diana – Fabric Care Duo',
             'description' => 'Proposed: Aroma Fabric Care Pink + Blue 25KG combo for laundry businesses.',
             'start_date'  => Carbon::now()->format('Y-m-d'),
@@ -487,9 +487,9 @@ class DoZeeTestDataSeeder extends Seeder
             'status'      => 'Pending',
         ]);
 
-        // Promo 9 – Rejected salesman proposal
+        // Promo 9 – Rejected salesmen proposal
         Promotion::create([
-            'salesman_id' => $alya->salesman_id,
+            'salesmen_id' => $alya->salesmen_id,
             'promo_name'  => 'Alya – Bleach Mega Sale',
             'description' => 'Proposed 50% off Bleach (rejected: margin too thin).',
             'start_date'  => Carbon::now()->subDays(30)->format('Y-m-d'),
@@ -502,23 +502,23 @@ class DoZeeTestDataSeeder extends Seeder
 
         // Single-item promo sales (Ultra White)
         for ($i = 0; $i < 8; $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$ultraWhite10, rand(1, 2)],
             ], $this->randDate(30), 'Approved', $promoUltraWhite->promo_id);
         }
 
         // Single-item promo sales (Fabric Blue)
         for ($i = 0; $i < 5; $i++) {
-            $this->makeSale($alya->salesman_id, [
+            $this->makeSale($alya->salesmen_id, [
                 [$fabricBlue, 1],
             ], $this->randDate(10), 'Approved', $promoFabricBlue->promo_id);
         }
 
         // Bundle promo: Aroma Laundry Combo
         for ($i = 0; $i < 10; $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$ultraWhite10, rand(1, 2)],
                 [$fabricPink,   1],
             ], $this->randDate(30), 'Approved', $promoAromaCombo->promo_id);
@@ -526,8 +526,8 @@ class DoZeeTestDataSeeder extends Seeder
 
         // Bundle promo: House Pack
         for ($i = 0; $i < 8; $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$dishWash,     rand(1, 3)],
                 [$floorCleaner, rand(1, 2)],
             ], $this->randDate(25), 'Approved', $promoHousePack->promo_id);
@@ -535,8 +535,8 @@ class DoZeeTestDataSeeder extends Seeder
 
         // Bundle promo: Deep Clean Kit
         for ($i = 0; $i < 6; $i++) {
-            $salesman = $salesmen[array_rand($salesmen)];
-            $this->makeSale($salesman->salesman_id, [
+            $salesmenInstance = $salesmenList[array_rand($salesmenList)];
+            $this->makeSale($salesmenInstance->salesmen_id, [
                 [$blueCaring,   rand(1, 2)],
                 [$stainRemover, rand(1, 2)],
                 [$bleach,       1],
@@ -558,12 +558,12 @@ class DoZeeTestDataSeeder extends Seeder
 
         foreach (array_slice($pendingProducts, 0, self::PENDING_COUNT) as $items) {
             Sale::create([
-                'salesman_id'  => $alya->salesman_id,
+                'salesmen_id'  => $alya->salesmen_id,
                 'event_name'   => null,
                 'total_amount' => array_sum(array_map(fn($i) => $i[0]->price * $i[1], $items)),
                 'sale_date'    => Carbon::now()->subDays(rand(1, 3)),
                 'status'       => 'Pending',
-                'ante_create'  => Carbon::now()->subDays(rand(1, 3)),
+                'date_create'  => Carbon::now()->subDays(rand(1, 3)),
                 'date_modifier' => null,
                 'date_verify'  => null,
             ])->each(function ($sale) use ($items) {
@@ -584,12 +584,12 @@ class DoZeeTestDataSeeder extends Seeder
         ];
         foreach ($dianaPending as $items) {
             Sale::create([
-                'salesman_id'  => $diana->salesman_id,
+                'salesmen_id'  => $diana->salesmen_id,
                 'event_name'   => null,
                 'total_amount' => array_sum(array_map(fn($i) => $i[0]->price * $i[1], $items)),
                 'sale_date'    => Carbon::now()->subDays(rand(1, 2)),
                 'status'       => 'Pending',
-                'ante_create'  => Carbon::now()->subDays(rand(1, 2)),
+                'date_create'  => Carbon::now()->subDays(rand(1, 2)),
                 'date_modifier' => null,
                 'date_verify'  => null,
             ])->each(function ($sale) use ($items) {
@@ -614,12 +614,12 @@ class DoZeeTestDataSeeder extends Seeder
         foreach (array_slice($rejectedProducts, 0, self::REJECTED_COUNT) as $items) {
             $date = Carbon::now()->subDays(rand(7, 30));
             Sale::create([
-                'salesman_id'   => $alya->salesman_id,
+                'salesmen_id'   => $alya->salesmen_id,
                 'event_name'    => null,
                 'total_amount'  => array_sum(array_map(fn($i) => $i[0]->price * $i[1], $items)),
                 'sale_date'     => $date,
                 'status'        => 'Rejected',
-                'ante_create'   => $date,
+                'date_create'   => $date,
                 'date_modifier' => $date->copy()->addHours(rand(1, 5)),
                 'date_verify'   => null,
             ])->each(function ($sale) use ($items) {
@@ -644,8 +644,8 @@ class DoZeeTestDataSeeder extends Seeder
         $this->command->info('✅  Do\'Zee Test Data Seeded Successfully');
         $this->command->info('──────────────────────────────────────────');
         $this->command->info("  Manager  : nuraisyahsiti793@gmail.com  / Nurisy@22");
-        $this->command->info("  Salesman : alya@dozee.com              / Aly@1234");
-        $this->command->info("  Salesman : diana@dozee.com             / Dian@1234");
+        $this->command->info("  Salesmen : alya@dozee.com              / Aly@1234");
+        $this->command->info("  Salesmen : diana@dozee.com             / Dian@1234");
         $this->command->info('──────────────────────────────────────────');
         $this->command->info("  Products     : " . Product::count());
         $this->command->info("  Categories   : " . Category::count());

@@ -26,7 +26,7 @@
                 <th>Name</th>
                 <th>Period</th>
                 <th>Status</th>
-                <th class="text-right">Discount</th>
+                <th class="text-right">Discount (%)</th>
                 <th class="text-right">Sales (Qty)</th>
                 <th class="text-right">Revenue (RM)</th>
             </tr>
@@ -38,7 +38,7 @@
                 <td>{{ $promo->promo_name }}</td>
                 <td>{{ \Carbon\Carbon::parse($promo->start_date)->format('d M y') }} - {{ \Carbon\Carbon::parse($promo->end_date)->format('d M y') }}</td>
                 <td>{{ $promo->status }}</td>
-                <td class="text-right">{{ number_format($promo->discount_amount, 2) }}</td>
+                <td class="text-right">{{ $promo->final_discount ?? 10 }}%</td>
                 <td class="text-right">{{ $promoRevenue[$promo->promo_id]['sales_count'] ?? 0 }}</td>
                 <td class="text-right">{{ number_format($promoRevenue[$promo->promo_id]['revenue'] ?? 0, 2) }}</td>
             </tr>

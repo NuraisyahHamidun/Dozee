@@ -1,4 +1,87 @@
 <x-guest-layout>
+    <style>
+        body {
+            background-image: linear-gradient(rgba(30, 27, 75, 0.65), rgba(15, 23, 42, 0.85)), url('{{ asset('images/dozee-bg.png') }}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-attachment: fixed !important;
+            background-repeat: no-repeat !important;
+        }
+        
+        /* Make the logo text and brand name white to stand out against the dark background */
+        span.heading-font.text-slate-900 {
+            color: #ffffff !important;
+        }
+        
+        /* Adjust footer and logo text colors outside the glass container */
+        .text-slate-400, .italic {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        /* Force all texts, labels, and links inside the glass container to be black */
+        .glass-effect h2,
+        .glass-effect p,
+        .glass-effect label,
+        .glass-effect span,
+        .glass-effect a:not(.btn-custom-back):not(.btn-custom-action),
+        .glass-effect button.toggle-password {
+            color: #000000 !important;
+        }
+
+        /* Custom Button Styling - BACK */
+        .btn-custom-back {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            height: 38px !important;
+            padding: 0 16px !important;
+            background-color: #ffffff !important; /* white background */
+            border: 1px solid #d1d5db !important; /* light grey border */
+            border-radius: 9999px !important; /* rounded pill shape */
+            font-size: 10px !important;
+            font-weight: 500 !important; /* not too bold */
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            transition: all 0.2s ease-in-out !important;
+            text-decoration: none !important;
+            color: #4b5563 !important; /* dark grey text */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        .btn-custom-back:hover {
+            background-color: #f9fafb !important;
+            border-color: #9ca3af !important;
+            color: #1f2937 !important;
+            transform: translateY(-1px);
+        }
+
+        /* Custom Button Styling - ACTION (Create Account) */
+        .btn-custom-action {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 38px !important;
+            padding: 0 16px !important;
+            background-color: #f5f3ff !important; /* very light lavender background */
+            border: 1px solid #c7d2fe !important; /* light purple border */
+            border-radius: 9999px !important; /* rounded pill shape */
+            font-size: 11px !important; /* clear and readable */
+            font-weight: 600 !important;
+            text-transform: none !important; /* allow normal capitalization */
+            letter-spacing: 0.02em !important;
+            transition: all 0.2s ease-in-out !important;
+            text-decoration: none !important;
+            color: #6366f1 !important; /* purple text */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        .btn-custom-action:hover {
+            background-color: #eedffc !important; /* slightly darker lavender */
+            border-color: #a5b4fc !important;
+            color: #4f46e5 !important;
+            transform: translateY(-1px);
+        }
+    </style>
+
     <div class="mb-8">
         <h2 class="heading-font text-2xl font-black text-slate-800 tracking-tight">Manager Login</h2>
         <p class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">Access your Do’Zee account</p>
@@ -53,13 +136,13 @@
             </button>
             
             <div class="flex items-center justify-between mt-2">
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
+                <a href="{{ url('/') }}" class="btn-custom-back">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                     </svg>
-                    {{ __('Cancel') }}
+                    {{ __('Back') }}
                 </a>
-                <a class="text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800" href="{{ route('manager.register') }}">
+                <a class="btn-custom-action" href="{{ route('manager.register') }}">
                     {{ __('Create account') }}
                 </a>
             </div>

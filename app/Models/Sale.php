@@ -13,12 +13,14 @@ class Sale extends Model
     protected $primaryKey = 'transaction_id';
     
     protected $fillable = [
-        'salesman_id', 
+        'salesmen_id', 
         'event_name', 
         'total_amount', 
+        'type',
+        'payment_method',
         'sale_date', 
         'status', 
-        'ante_create', 
+        'date_create', 
         'date_modifier', 
         'date_verify',
         'approved_by'
@@ -26,7 +28,7 @@ class Sale extends Model
 
     protected $casts = [
         'sale_date' => 'datetime',
-        'ante_create' => 'datetime',
+        'date_create' => 'datetime',
         'date_modifier' => 'datetime',
         'date_verify' => 'datetime',
     ];
@@ -37,15 +39,15 @@ class Sale extends Model
             if (empty($sale->status)) {
                 $sale->status = 'Pending';
             }
-            if (empty($sale->ante_create)) {
-                $sale->ante_create = now();
+            if (empty($sale->date_create)) {
+                $sale->date_create = now();
             }
         });
     }
 
-    public function salesman()
+    public function salesmen()
     {
-        return $this->belongsTo(Salesman::class, 'salesman_id', 'salesman_id');
+        return $this->belongsTo(Salesmen::class, 'salesmen_id', 'salesmen_id');
     }
 
     public function saleItems()

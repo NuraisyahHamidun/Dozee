@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Sale;
 use App\Models\Product;
 use Illuminate\Support\Facades\Hash;
@@ -15,11 +15,11 @@ beforeEach(function () {
         'password' => Hash::make('password'),
     ]);
 
-    $this->salesman = Salesman::create([
+    $this->salesmen = Salesmen::create([
         'manager_id' => $this->manager->manager_id,
-        'name' => 'Salesman Test',
-        'username' => 'salesmantest',
-        'email' => 'salesman@test.com',
+        'name' => 'Salesmen Test',
+        'username' => 'salesmentest',
+        'email' => 'salesmen@test.com',
         'password' => Hash::make('password'),
     ]);
 
@@ -33,7 +33,7 @@ beforeEach(function () {
 test('backend validation rejects past transaction date', function () {
     $pastDate = Carbon::yesterday()->setHour(12)->format('Y-m-d H:i:s');
     
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->post(route('sales.store'), [
             'sale_date' => $pastDate,
             'items' => [
@@ -50,7 +50,7 @@ test('backend validation rejects past transaction date', function () {
 test('backend validation rejects transaction time before 8 AM', function () {
     $earlyTime = Carbon::tomorrow()->setHour(7)->setMinute(59)->format('Y-m-d H:i:s');
 
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->post(route('sales.store'), [
             'sale_date' => $earlyTime,
             'items' => [
@@ -67,7 +67,7 @@ test('backend validation rejects transaction time before 8 AM', function () {
 test('backend validation rejects transaction time after 8 PM', function () {
     $lateTime = Carbon::tomorrow()->setHour(20)->setMinute(01)->format('Y-m-d H:i:s');
 
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->post(route('sales.store'), [
             'sale_date' => $lateTime,
             'items' => [
@@ -84,7 +84,7 @@ test('backend validation rejects transaction time after 8 PM', function () {
 test('backend validation accepts valid date and time', function () {
     $validDateTime = Carbon::tomorrow()->setHour(12)->setMinute(0)->format('Y-m-d H:i:s');
 
-    $response = $this->actingAs($this->salesman, 'salesman')
+    $response = $this->actingAs($this->salesmen, 'salesmen')
         ->post(route('sales.store'), [
             'sale_date' => $validDateTime,
             'items' => [

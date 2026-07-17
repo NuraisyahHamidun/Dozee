@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sale;
 use App\Models\Product;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,11 +14,11 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $salesman = Auth::guard('salesman')->user();
+        $salesmen = Auth::guard('salesmen')->user();
         
         $query = Sale::query();
-        if ($salesman) {
-            $query->where('salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $query->where('salesmen_id', $salesmen->salesmen_id);
         }
 
         $salesCount = (clone $query)->count();
@@ -59,17 +59,17 @@ class DashboardController extends Controller
             ->orderBy('total_qty', 'desc')
             ->take(5);
 
-        if ($salesman) {
-            $topProductsQuery->where('sales_transaction.salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $topProductsQuery->where('sales_transaction.salesmen_id', $salesmen->salesmen_id);
         }
 
         $topProducts = $topProductsQuery->get();
 
-        $salesmanPerformance = [];
+        $salesmenPerformance = [];
         if (Auth::guard('manager')->check()) {
-            $salesmanPerformance = Sale::join('salesman', 'sales_transaction.salesman_id', '=', 'salesman.salesman_id')
-                ->select('salesman.name', DB::raw('SUM(total_amount) as total'))
-                ->groupBy('salesman.salesman_id', 'salesman.name')
+            $salesmenPerformance = Sale::join('salesmen', 'sales_transaction.salesmen_id', '=', 'salesmen.salesmen_id')
+                ->select('salesmen.name', DB::raw('SUM(total_amount) as total'))
+                ->groupBy('salesmen.salesmen_id', 'salesmen.name')
                 ->orderBy('total', 'desc')
                 ->take(3)
                 ->get();
@@ -84,16 +84,16 @@ class DashboardController extends Controller
         $salesLastWeek = 0;
         $salesGrowth = 0;
 
-        if ($salesman) {
+        if ($salesmen) {
             $itemsSold = (int) DB::table('transaction_detail')
                 ->join('sales_transaction', 'transaction_detail.transaction_id', '=', 'sales_transaction.transaction_id')
-                ->where('sales_transaction.salesman_id', $salesman->salesman_id)
+                ->where('sales_transaction.salesmen_id', $salesmen->salesmen_id)
                 ->sum('transaction_detail.quantity');
 
             $activeDeals = Promotion::where('status', 'Active')
-                ->where(function($q) use ($salesman) {
-                    $q->whereNull('salesman_id')
-                      ->orWhere('salesman_id', $salesman->salesman_id);
+                ->where(function($q) use ($salesmen) {
+                    $q->whereNull('salesmen_id')
+                      ->orWhere('salesmen_id', $salesmen->salesmen_id);
                 })->count();
 
             // Personal Performance Score: e.g., target is RM1500 monthly sales
@@ -103,16 +103,16 @@ class DashboardController extends Controller
                 ->join('item', 'transaction_detail.item_id', '=', 'item.item_id')
                 ->join('sales_transaction', 'transaction_detail.transaction_id', '=', 'sales_transaction.transaction_id')
                 ->select('item.item_name', DB::raw('SUM(transaction_detail.quantity) as total_qty'))
-                ->where('sales_transaction.salesman_id', $salesman->salesman_id)
+                ->where('sales_transaction.salesmen_id', $salesmen->salesmen_id)
                 ->groupBy('item.item_id', 'item.item_name')
                 ->orderBy('total_qty', 'desc')
                 ->first();
 
-            $salesThisWeek = Sale::where('salesman_id', $salesman->salesman_id)
+            $salesThisWeek = Sale::where('salesmen_id', $salesmen->salesmen_id)
                 ->whereBetween('sale_date', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()])
                 ->sum('total_amount');
 
-            $salesLastWeek = Sale::where('salesman_id', $salesman->salesman_id)
+            $salesLastWeek = Sale::where('salesmen_id', $salesmen->salesmen_id)
                 ->whereBetween('sale_date', [\Carbon\Carbon::now()->subWeek()->startOfWeek(), \Carbon\Carbon::now()->subWeek()->endOfWeek()])
                 ->sum('total_amount');
 
@@ -133,7 +133,7 @@ class DashboardController extends Controller
             'monthlyChartLabels',
             'monthlyChartValues',
             'topProducts',
-            'salesmanPerformance',
+            'salesmenPerformance',
             'itemsSold',
             'activeDeals',
             'performanceScore',
@@ -149,11 +149,11 @@ class DashboardController extends Controller
         $startDate = $request->get('start_date', now()->subMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $query = Sale::with(['salesman', 'saleItems.product'])
+        $query = Sale::with(['salesmen', 'saleItems.product'])
             ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        if (Auth::guard('salesman')->check()) {
-            $query->where('salesman_id', Auth::guard('salesman')->user()->salesman_id);
+        if (Auth::guard('salesmen')->check()) {
+            $query->where('salesmen_id', Auth::guard('salesmen')->user()->salesmen_id);
         }
 
         // Calculate totals from a clone of the query before pagination
@@ -172,11 +172,11 @@ class DashboardController extends Controller
         $startDate = $request->get('start_date', now()->subMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
-        $query = Sale::with(['salesman'])
+        $query = Sale::with(['salesmen'])
             ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        if (Auth::guard('salesman')->check()) {
-            $query->where('salesman_id', Auth::guard('salesman')->user()->salesman_id);
+        if (Auth::guard('salesmen')->check()) {
+            $query->where('salesmen_id', Auth::guard('salesmen')->user()->salesmen_id);
         }
 
         $sales = $query->get();
@@ -201,7 +201,7 @@ class DashboardController extends Controller
             echo '<tr>
                     <th style="background-color: #F1F5F9;">Sale ID</th>
                     <th style="background-color: #F1F5F9;">Date</th>
-                    <th style="background-color: #F1F5F9;">Salesman</th>
+                    <th style="background-color: #F1F5F9;">Salesmen</th>
                     <th style="background-color: #F1F5F9;">Amount (RM)</th>
                   </tr>';
 
@@ -211,7 +211,7 @@ class DashboardController extends Controller
                 echo '<tr>';
                 echo '<td>TXN-' . str_pad($sale->transaction_id, 6, '0', STR_PAD_LEFT) . '</td>';
                 echo '<td>' . $sale->sale_date . '</td>';
-                echo '<td>' . ($sale->salesman->name ?? 'N/A') . '</td>';
+                echo '<td>' . ($sale->salesmen->name ?? 'N/A') . '</td>';
                 echo '<td align="right">' . number_format($sale->total_amount, 2) . '</td>';
                 echo '</tr>';
             }
@@ -229,14 +229,14 @@ class DashboardController extends Controller
 
     public function getChartData(Request $request)
     {
-        $salesman = Auth::guard('salesman')->user();
+        $salesmen = Auth::guard('salesmen')->user();
         
         $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         
         $baseQuery = Sale::query()->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-        if ($salesman) {
-            $baseQuery->where('salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $baseQuery->where('salesmen_id', $salesmen->salesmen_id);
         }
 
         // 1. Daily Sales
@@ -262,8 +262,8 @@ class DashboardController extends Controller
             ->select('promotion.promo_name', DB::raw('SUM(transaction_detail.quantity * item.price) as total_revenue'))
             ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             
-        if ($salesman) {
-            $promoQuery->where('sales_transaction.salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $promoQuery->where('sales_transaction.salesmen_id', $salesmen->salesmen_id);
         }
         $promoData = $promoQuery->groupBy('promotion.promo_id', 'promotion.promo_name')
             ->orderBy('total_revenue', 'desc')
@@ -276,8 +276,8 @@ class DashboardController extends Controller
             ->join('item', 'transaction_detail.item_id', '=', 'item.item_id')
             ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             
-        if ($salesman) {
-            $comboQuery->where('sales_transaction.salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $comboQuery->where('sales_transaction.salesmen_id', $salesmen->salesmen_id);
         }
 
         $comboData = (clone $comboQuery)->whereNotNull('transaction_detail.promo_id')->sum(DB::raw('transaction_detail.quantity * item.price'));
@@ -290,8 +290,8 @@ class DashboardController extends Controller
             ->select('item.item_name', DB::raw('SUM(transaction_detail.quantity) as total_qty'), DB::raw('SUM(transaction_detail.quantity * item.price) as total_revenue'))
             ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             
-        if ($salesman) {
-            $topItemsQuery->where('sales_transaction.salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $topItemsQuery->where('sales_transaction.salesmen_id', $salesmen->salesmen_id);
         }
         
         $sortBy = $request->get('sort_by', 'quantity');
@@ -336,8 +336,8 @@ class DashboardController extends Controller
             ->select('item.category', DB::raw('SUM(transaction_detail.quantity) as total_qty'))
             ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
             
-        if ($salesman) {
-            $categoryQuery->where('sales_transaction.salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $categoryQuery->where('sales_transaction.salesmen_id', $salesmen->salesmen_id);
         }
         $categoryData = $categoryQuery->groupBy('item.category')->get();
 

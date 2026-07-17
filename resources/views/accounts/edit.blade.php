@@ -5,7 +5,7 @@
                 <span class="p-2 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </span>
-                {{ __('Edit Staff') }}: {{ $salesman->name }}
+                {{ __('Edit Salesmen') }}: {{ $salesmen->name }}
             </h2>
         </div>
     </x-slot>
@@ -17,7 +17,7 @@
                 <!-- Main Form Card -->
                 <div class="lg:col-span-8">
                     <div class="premium-card bg-white p-10">
-                        <form method="POST" action="{{ route('accounts.update', $salesman->salesman_id) }}" class="space-y-8" id="editStaffForm" autocomplete="off" novalidate>
+                        <form method="POST" action="{{ route('accounts.update', $salesmen->salesmen_id) }}" class="space-y-8" id="editStaffForm" autocomplete="off" novalidate>
                             @csrf
                             @method('PATCH')
 
@@ -27,7 +27,7 @@
                                     <x-input-label for="staff_code" :value="__('Staff Code')" class="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-2" />
                                     <input id="staff_code" name="staff_code" type="text" readonly
                                            class="w-full px-5 py-3 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl cursor-not-allowed text-sm font-medium text-slate-500 dark:text-slate-400"
-                                           value="{{ $salesman->staff_code ?? 'Not Generated' }}" />
+                                           value="{{ $salesmen->staff_code ?? 'Not Generated' }}" />
                                     <p class="text-slate-400 text-xs mt-1">This code is automatically generated and cannot be modified.</p>
                                 </div>
 
@@ -36,7 +36,7 @@
                                     <x-input-label for="name" :value="__('Name')" class="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-2" />
                                     <input id="name" name="name" type="text"
                                            class="w-full px-5 py-3 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200"
-                                           value="{{ old('name', $salesman->name) }}" required placeholder="Enter full name" />
+                                           value="{{ old('name', $salesmen->name) }}" required placeholder="Enter full name" />
                                     <x-input-error class="mt-2" :messages="$errors->get('name')" />
                                 </div>
 
@@ -46,14 +46,14 @@
                                         <x-input-label for="email" :value="__('Email')" class="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-2" />
                                         <input id="email" name="email" type="email" readonly
                                                class="w-full px-5 py-3 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl cursor-not-allowed text-sm font-medium text-slate-500 dark:text-slate-400"
-                                               value="{{ old('email', $salesman->email) }}" required placeholder="email@example.com" />
+                                               value="{{ old('email', $salesmen->email) }}" required placeholder="email@example.com" />
                                         <x-input-error class="mt-2" :messages="$errors->get('email')" />
                                     </div>
                                     <div>
                                         <x-input-label for="username" :value="__('Username')" class="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-2" />
                                         <input id="username" name="username" type="text"
                                                class="w-full px-5 py-3 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium text-slate-700 dark:text-slate-200"
-                                               value="{{ old('username', $salesman->username) }}" required placeholder="e.g. johndoe"
+                                               value="{{ old('username', $salesmen->username) }}" required placeholder="e.g. johndoe"
                                                autocomplete="off" />
                                         <x-input-error class="mt-2" :messages="$errors->get('username')" />
                                         <span id="err-username" class="text-red-500 text-xs mt-1 block"></span>
@@ -66,7 +66,7 @@
                                     <x-input-label for="address" :value="__('Address')" class="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-2" />
                                     <textarea id="address" name="address" readonly required rows="1"
                                               class="w-full px-5 py-3 bg-slate-100 dark:bg-slate-900 border-none rounded-2xl cursor-not-allowed text-sm font-medium text-slate-500 dark:text-slate-400"
-                                              placeholder="Enter living address">{{ old('address', $salesman->address) }}</textarea>
+                                              placeholder="Enter living address">{{ old('address', $salesmen->address) }}</textarea>
                                     <x-input-error class="mt-2" :messages="$errors->get('address')" />
                                 </div>
 
@@ -135,18 +135,18 @@
                     <div class="premium-card p-8 bg-slate-900 text-white shadow-2xl">
                         <div class="flex items-center gap-4 mb-6">
                             <div class="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center font-black text-white text-xl">
-                                {{ strtoupper(substr($salesman->name, 0, 1)) }}
+                                {{ strtoupper(substr($salesmen->name, 0, 1)) }}
                             </div>
                             <div>
-                                <h4 class="text-xs font-black uppercase tracking-widest text-white">{{ $salesman->name }}</h4>
-                                @if($salesman->staff_code)
-                                    <p class="text-[10px] font-bold text-indigo-400 tracking-wider mt-0.5">{{ $salesman->staff_code }}</p>
+                                <h4 class="text-xs font-black uppercase tracking-widest text-white">{{ $salesmen->name }}</h4>
+                                @if($salesmen->staff_code)
+                                    <p class="text-[10px] font-bold text-indigo-400 tracking-wider mt-0.5">{{ $salesmen->staff_code }}</p>
                                 @endif
-                                <p class="text-[10px] font-medium text-slate-400 mt-0.5">{{ $salesman->email }}</p>
+                                <p class="text-[10px] font-medium text-slate-400 mt-0.5">{{ $salesmen->email }}</p>
                             </div>
                         </div>
                         <p class="text-[11px] font-medium text-slate-400 leading-relaxed">
-                            Changes to staff information will affect all linked records in sales and reports.
+                            Changes to salesmen information will affect all linked records in sales and reports.
                         </p>
                     </div>
 
@@ -155,16 +155,16 @@
                         <div class="space-y-4">
                             <div class="flex flex-col gap-1">
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ __('Enrolled') }}</span>
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $salesman->created_at->format('d M Y, H:i') }}</span>
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $salesmen->created_at->format('d M Y, H:i') }}</span>
                             </div>
                             <div class="flex flex-col gap-1 pt-2 border-t border-slate-100 dark:border-slate-700/50">
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ __('Phone Number') }}</span>
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $salesman->phone_number ?? 'Not registered' }}</span>
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $salesmen->phone_number ?? 'Not registered' }}</span>
                             </div>
                             <div class="flex flex-col gap-1 pt-2 border-t border-slate-100 dark:border-slate-700/50">
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ __('Profile Picture') }}</span>
                                 <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    @if($salesman->profile_picture)
+                                    @if($salesmen->profile_picture)
                                         <span class="text-emerald-500 font-black">✓ Uploaded</span>
                                     @else
                                         <span class="text-slate-400">Not uploaded</span>

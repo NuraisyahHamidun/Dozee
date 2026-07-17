@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\Manager;
-use App\Models\Salesman;
+use App\Models\Salesmen;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Sale;
@@ -17,7 +17,7 @@ class SystemVerificationTest extends TestCase
     use RefreshDatabase;
 
     protected $manager;
-    protected $salesman;
+    protected $salesmen;
     protected $category;
     protected $products = [];
 
@@ -30,7 +30,7 @@ class SystemVerificationTest extends TestCase
 
         // Retrieve seeded entities
         $this->manager = Manager::where('email', 'nuraisyahsiti793@gmail.com')->first();
-        $this->salesman = Salesman::where('email', 'ariff@dozee.com')->first();
+        $this->salesmen = Salesmen::where('email', 'ariff@dozee.com')->first();
         $this->category = Category::where('name', 'Detergent')->first();
         $this->products = Product::all();
     }
@@ -59,16 +59,16 @@ class SystemVerificationTest extends TestCase
     }
 
     /** @test */
-    public function test_salesman_login_and_dashboard_access()
+    public function test_salesmen_login_and_dashboard_access()
     {
-        $response = $this->post('/salesman/login', [
+        $response = $this->post('/salesmen/login', [
             'email' => 'ariff@dozee.com',
             'password' => 'Ariff@1234',
         ]);
 
         $response->assertRedirect(route('dashboard'));
 
-        $dashboardResponse = $this->actingAs($this->salesman, 'salesman')
+        $dashboardResponse = $this->actingAs($this->salesmen, 'salesmen')
             ->get(route('dashboard'));
 
         $dashboardResponse->assertStatus(200);
@@ -115,22 +115,22 @@ class SystemVerificationTest extends TestCase
     }
 
     /** @test */
-    public function test_salesman_read_only_items_access_and_search()
+    public function test_salesmen_read_only_items_access_and_search()
     {
-        $this->actingAs($this->salesman, 'salesman');
+        $this->actingAs($this->salesmen, 'salesmen');
 
         // View items list
-        $response = $this->get(route('salesman.items.index'));
+        $response = $this->get(route('salesmen.items.index'));
         $response->assertStatus(200);
         $response->assertSee('Dozee Ultra Liquid 1L');
 
         // Search items
-        $searchResponse = $this->get(route('salesman.items.index', ['search' => 'Powder']));
+        $searchResponse = $this->get(route('salesmen.items.index', ['search' => 'Powder']));
         $searchResponse->assertStatus(200);
         $searchResponse->assertSee('Dozee Power Powder 2kg');
         $searchResponse->assertDontSee('Dozee Ultra Liquid 1L');
 
-        // Verify salesman cannot access manager products CRUD routes (gets redirected due to middleware)
+        // Verify salesmen cannot access manager products CRUD routes (gets redirected due to middleware)
         $createResponse = $this->get(route('products.create'));
         $createResponse->assertRedirect();
 
@@ -151,11 +151,11 @@ class SystemVerificationTest extends TestCase
         $initialStock0 = $this->products[0]->fresh()->stock_qty;
         $initialStock1 = $this->products[1]->fresh()->stock_qty;
 
-        // 1. Salesman records a sale
-        $this->actingAs($this->salesman, 'salesman');
+        // 1. Salesmen records a sale
+        $this->actingAs($this->salesmen, 'salesmen');
 
         $response = $this->post(route('sales.store'), [
-            'sale_date' => now()->format('Y-m-d H:i:s'),
+            'sale_date' => now()->setHour(12)->setMinute(0)->format('Y-m-d H:i:s'),
             'event_name' => 'Roadshow Test',
             'items' => [
                 [
@@ -174,7 +174,7 @@ class SystemVerificationTest extends TestCase
         // Verify sale is created in DB with status Pending and total amount is calculated
         $expectedTotal = ($this->products[0]->price * 2) + ($this->products[1]->price * 1);
         $this->assertDatabaseHas('sales_transaction', [
-            'salesman_id' => $this->salesman->salesman_id,
+            'salesmen_id' => $this->salesmen->salesmen_id,
             'event_name' => 'Roadshow Test',
             'status' => 'Pending',
             'total_amount' => $expectedTotal,
@@ -289,5 +289,54 @@ class SystemVerificationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('ITM-MOCK-A');
         $response->assertSee('ITM-MOCK-B');
+    }
+
+    /** @test */
+    public function test_market_basket_analysis_page_loads()
+    {
+        \App\Models\AprioriAnalysis::query()->delete();
+
+        $itemA = Product::first();
+        $itemB = Product::skip(1)->first();
+
+        \App\Models\AprioriAnalysis::create([
+            'antecedent' => (string) $itemA->item_id,
+            'consequent' => (string) $itemB->item_id,
+            'support' => 0.25,
+            'confidence' => 0.75,
+            'lift' => 1.5,
+            'rule_text' => $itemA->item_name . ' ==> ' . $itemB->item_name,
+        ]);
+
+        $this->actingAs($this->manager, 'manager');
+        $response = $this->get(route('analysis.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Market Basket Analysis + Association Insight Dashboard');
+        $response->assertSee($itemA->item_name);
+        $response->assertSee($itemB->item_name);
+    }
+
+    /** @test */
+    public function test_create_promotion_prefills_correctly_from_rule_id()
+    {
+        $itemA = Product::first();
+        $itemB = Product::skip(1)->first();
+
+        $rule = \App\Models\AprioriAnalysis::create([
+            'antecedent' => (string) $itemA->item_id,
+            'consequent' => (string) $itemB->item_id,
+            'support' => 0.25,
+            'confidence' => 0.75,
+            'lift' => 1.5,
+            'rule_text' => $itemA->item_name . ' ==> ' . $itemB->item_name,
+        ]);
+
+        $this->actingAs($this->manager, 'manager');
+        $response = $this->get(route('promotions.create', ['rule_id' => $rule->rule_id]));
+        $response->assertStatus(200);
+        $response->assertSee('Combo: ' . $itemA->item_name . ' & ' . $itemB->item_name);
+        $response->assertSee(round($rule->support * 100, 2) . '%');
+        $response->assertSee(round($rule->confidence * 100, 1) . '%');
+        $response->assertSee(round($rule->lift, 2));
     }
 }

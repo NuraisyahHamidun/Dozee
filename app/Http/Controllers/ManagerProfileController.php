@@ -34,7 +34,7 @@ class ManagerProfileController extends Controller
 
             while (
                 \App\Models\Manager::where('username', $username)->where('manager_id', '!=', $manager->manager_id)->exists()
-                || \App\Models\Salesman::where('username', $username)->exists()
+                || \App\Models\Salesmen::where('username', $username)->exists()
             ) {
                 $username = $baseUsername . $count;
                 $count++;
@@ -48,7 +48,7 @@ class ManagerProfileController extends Controller
             'email'    => [
                 'required', 'string', 'lowercase', 'email', 'max:255',
                 Rule::unique('manager', 'email')->ignore($manager->manager_id, 'manager_id'),
-                Rule::unique('salesman', 'email'),
+                Rule::unique('salesmen', 'email'),
             ],
             'phone_number' => ['required', 'regex:/^[0-9]{3}-[0-9]{7,8}$/'],
             'address'  => ['required', 'string', 'max:500'],

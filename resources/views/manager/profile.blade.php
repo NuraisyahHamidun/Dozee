@@ -11,7 +11,7 @@
                 @if(Auth::guard('manager')->check())
                     {{ __('Manager Profile') }}
                 @else
-                    {{ __('Staff Profile') }}
+                    {{ __('Salesmen Profile') }}
                 @endif
             </h2>
         </div>
@@ -49,7 +49,7 @@
                             <div class="w-full pt-6" style="border-top: 1px solid rgba(255,255,255,0.15);">
                                 <div class="text-center">
                                     <span class="block font-black text-2xl leading-none text-white">{{ $manager->salesmen()->count() }}</span>
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-purple-200">Staff</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-purple-200">Salesmen</span>
                                 </div>
                             </div>
                         </div>

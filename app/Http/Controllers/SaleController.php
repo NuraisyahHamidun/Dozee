@@ -13,18 +13,18 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $salesman = Auth::guard('salesman')->user();
-        $query = Sale::query()->with(['salesman', 'saleItems.product']);
+        $salesmen = Auth::guard('salesmen')->user();
+        $query = Sale::query()->with(['salesmen', 'saleItems.product']);
 
-        if ($salesman) {
-            $query->where('salesman_id', $salesman->salesman_id);
+        if ($salesmen) {
+            $query->where('salesmen_id', $salesmen->salesmen_id);
         }
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
                 $q->where('transaction_id', 'like', '%' . $searchTerm . '%')
-                  ->orWhereHas('salesman', function($sq) use ($searchTerm) {
+                  ->orWhereHas('salesmen', function($sq) use ($searchTerm) {
                       $sq->where('name', 'like', '%' . $searchTerm . '%');
                   });
             });
@@ -37,8 +37,14 @@ class SaleController extends Controller
 
     public function create()
     {
-        $products = Product::all();
-        $promotions = \App\Models\Promotion::where('status', 'Active')->get();
+        $products = Product::orderBy('item_id', 'asc')->get();
+        $promotions = \App\Models\Promotion::with(['analysis.antecedentProduct', 'analysis.consequentProduct', 'associationRules'])
+            ->where('status', 'Active')
+            ->get()
+            ->filter(function($promo) {
+                return ($promo->rule_id && $promo->analysis) || $promo->associationRules->isNotEmpty();
+            })
+            ->values();
         $existingEvents = Sale::distinct()->pluck('event_name')->filter()->values();
         return view('sales.create', compact('products', 'promotions', 'existingEvents'));
     }
@@ -81,19 +87,43 @@ class SaleController extends Controller
             $pairs[] = $key;
         }
 
-        $salesman = Auth::guard('salesman')->user();
+        $salesmen = Auth::guard('salesmen')->user();
 
-        if (!$salesman) {
+        if (!$salesmen) {
             return redirect()->back()->withErrors(['error' => 'Only salesmen can record sales.']);
         }
 
         try {
             DB::beginTransaction();
 
+            $hasSingle = false;
+            $hasBundle = false;
+            $bundleGroupMap = [];
+
+            foreach ($request->items as $item) {
+                if (!empty($item['promo_id'])) {
+                    $pid = $item['promo_id'];
+                    if (!isset($bundleGroupMap[$pid])) {
+                        $bundleGroupMap[$pid] = 'BG-' . $pid . '-' . strtoupper(bin2hex(random_bytes(3)));
+                    }
+                    $hasBundle = true;
+                } else {
+                    $hasSingle = true;
+                }
+            }
+
+            $type = 'single';
+            if ($hasSingle && $hasBundle) {
+                $type = 'mixed';
+            } elseif ($hasBundle) {
+                $type = 'bundle';
+            }
+
             $sale = Sale::create([
-                'salesman_id' => $salesman->salesman_id,
+                'salesmen_id' => $salesmen->salesmen_id,
                 'event_name' => $request->event_name,
                 'total_amount' => 0,
+                'type' => $type,
                 'sale_date' => $request->sale_date ?? now(),
             ]);
 
@@ -106,12 +136,20 @@ class SaleController extends Controller
                     throw new \Exception("Insufficient stock for product: {$product->item_name}. Available: {$product->stock_qty}");
                 }
 
-                $subtotal = $product->price * $item['quantity'];
+                $discountPercent = 0;
+                if (!empty($item['promo_id'])) {
+                    $promo = Promotion::find($item['promo_id']);
+                    if ($promo) {
+                        $discountPercent = $promo->final_discount ?? 10;
+                    }
+                }
+                $subtotal = $product->price * $item['quantity'] * (1 - ($discountPercent / 100));
                 
                 $sale->saleItems()->create([
                     'item_id' => $product->item_id,
                     'quantity' => $item['quantity'],
                     'promo_id' => $item['promo_id'] ?? null,
+                    'bundle_group_id' => !empty($item['promo_id']) ? $bundleGroupMap[$item['promo_id']] : null,
                 ]);
 
                 $product->decrement('stock_qty', $item['quantity']);
@@ -132,20 +170,20 @@ class SaleController extends Controller
 
     public function show(Sale $sale)
     {
-        $salesman = Auth::guard('salesman')->user();
-        if ($salesman && $sale->salesman_id !== $salesman->salesman_id) {
+        $salesmen = Auth::guard('salesmen')->user();
+        if ($salesmen && $sale->salesmen_id !== $salesmen->salesmen_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        $sale->load(['saleItems.product', 'salesman']);
+        $sale->load(['saleItems.product', 'salesmen']);
         return view('sales.show', compact('sale'));
     }
 
     public function edit(Sale $sale)
     {
-        $salesman = Auth::guard('salesman')->user();
-        if ($salesman) {
-            if ($sale->salesman_id !== $salesman->salesman_id) {
+        $salesmen = Auth::guard('salesmen')->user();
+        if ($salesmen) {
+            if ($sale->salesmen_id !== $salesmen->salesmen_id) {
                 abort(403, 'Unauthorized action.');
             }
             if ($sale->status !== 'Approved') {
@@ -155,7 +193,13 @@ class SaleController extends Controller
 
         $sale->load('saleItems.product', 'saleItems.promotion');
         $products = Product::all();
-        $promotions = Promotion::where('status', 'Active')->get();
+        $promotions = Promotion::with(['analysis.antecedentProduct', 'analysis.consequentProduct', 'associationRules'])
+            ->where('status', 'Active')
+            ->get()
+            ->filter(function($promo) {
+                return ($promo->rule_id && $promo->analysis) || $promo->associationRules->isNotEmpty();
+            })
+            ->values();
         $existingEvents = Sale::distinct()->pluck('event_name')->filter()->values();
         
         return view('sales.edit', compact('sale', 'products', 'promotions', 'existingEvents'));
@@ -163,9 +207,9 @@ class SaleController extends Controller
 
     public function update(Request $request, Sale $sale)
     {
-        $salesman = Auth::guard('salesman')->user();
-        if ($salesman) {
-            if ($sale->salesman_id !== $salesman->salesman_id) {
+        $salesmen = Auth::guard('salesmen')->user();
+        if ($salesmen) {
+            if ($sale->salesmen_id !== $salesmen->salesmen_id) {
                 abort(403, 'Unauthorized action.');
             }
             if ($sale->status !== 'Approved') {
@@ -213,9 +257,33 @@ class SaleController extends Controller
         try {
             DB::beginTransaction();
 
+            $hasSingle = false;
+            $hasBundle = false;
+            $bundleGroupMap = [];
+
+            foreach ($request->items as $item) {
+                if (!empty($item['promo_id'])) {
+                    $pid = $item['promo_id'];
+                    if (!isset($bundleGroupMap[$pid])) {
+                        $bundleGroupMap[$pid] = 'BG-' . $pid . '-' . strtoupper(bin2hex(random_bytes(3)));
+                    }
+                    $hasBundle = true;
+                } else {
+                    $hasSingle = true;
+                }
+            }
+
+            $type = 'single';
+            if ($hasSingle && $hasBundle) {
+                $type = 'mixed';
+            } elseif ($hasBundle) {
+                $type = 'bundle';
+            }
+
             $sale->update([
                 'event_name' => $request->event_name,
                 'sale_date' => $request->sale_date ?? $sale->sale_date,
+                'type' => $type,
                 'date_modifier' => now(),
             ]);
 
@@ -224,8 +292,18 @@ class SaleController extends Controller
 
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
-                $subtotal = $product->price * $itemData['quantity'];
                 
+                $discountPercent = 0;
+                if (!empty($itemData['promo_id'])) {
+                    $promo = Promotion::find($itemData['promo_id']);
+                    if ($promo) {
+                        $discountPercent = $promo->final_discount ?? 10;
+                    }
+                }
+                $subtotal = $product->price * $itemData['quantity'] * (1 - ($discountPercent / 100));
+                
+                $itemBundleGroupId = !empty($itemData['promo_id']) ? $bundleGroupMap[$itemData['promo_id']] : null;
+
                 if (isset($itemData['detail_id']) && $itemData['detail_id']) {
                     $saleItem = $sale->saleItems()->where('detail_id', $itemData['detail_id'])->first();
                     if ($saleItem) {
@@ -252,6 +330,7 @@ class SaleController extends Controller
                             'item_id' => $product->item_id,
                             'quantity' => $itemData['quantity'],
                             'promo_id' => $itemData['promo_id'] ?? null,
+                            'bundle_group_id' => $itemBundleGroupId,
                         ]);
                         $keptItemIds[] = $saleItem->detail_id;
                     }
@@ -265,6 +344,7 @@ class SaleController extends Controller
                         'item_id' => $product->item_id,
                         'quantity' => $itemData['quantity'],
                         'promo_id' => $itemData['promo_id'] ?? null,
+                        'bundle_group_id' => $itemBundleGroupId,
                     ]);
                     $keptItemIds[] = $newSaleItem->detail_id;
                 }

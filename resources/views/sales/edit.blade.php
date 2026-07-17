@@ -16,6 +16,7 @@
             return [
                 'id' => $p->promo_id,
                 'name' => $p->promo_name,
+                'discount' => $p->final_discount ?? 10,
                 'product_ids' => $p->products->pluck('item_id')->toArray()
             ];
         })->values();
@@ -95,15 +96,39 @@
                                 Line Items
                             </h3>
 
-                            <div id="items-container" class="space-y-3">
-                                {{-- Rows are rendered by JS from window.existingSaleItems --}}
-                            </div>
+                            <div class="space-y-6">
+                                {{-- Section 1: Selected Bundles --}}
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Selected Bundles</h4>
+                                        <span class="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-750 dark:text-violet-400 text-[8px] font-black uppercase tracking-wider rounded-md">Bundle Discount Applies</span>
+                                    </div>
+                                    <div id="bundles-container" class="space-y-4" style="overflow:visible !important;">
+                                        {{-- Bundle groups will be inserted here --}}
+                                        <div class="bundles-empty-state py-8 text-center border-2 border-dashed border-slate-100 dark:border-slate-700/50 rounded-2xl text-xs text-slate-400 font-medium italic">
+                                            No bundles applied in this transaction.
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <div class="mt-8 flex gap-3">
-                                <button type="button" id="add-item" class="w-full py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-all group">
-                                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                                    <span class="text-xs font-black uppercase tracking-widest">Add Item</span>
-                                </button>
+                                {{-- Section 2: Additional Single Items --}}
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Additional Single Items</h4>
+                                        <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 text-[8px] font-black uppercase tracking-wider rounded-md">Standard Price</span>
+                                    </div>
+                                    <div id="singles-container" class="space-y-3" style="overflow:visible !important;">
+                                        {{-- Single items will be inserted here --}}
+                                    </div>
+                                    
+                                    {{-- Add Single Item button --}}
+                                    <div class="mt-3">
+                                        <button type="button" id="add-single-item-btn" class="w-full py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex items-center justify-center gap-3 text-slate-400 hover:text-indigo-600 hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/5 transition-all group">
+                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                            <span class="text-xs font-black uppercase tracking-widest">Add Additional Single Item</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -112,20 +137,47 @@
                     <div class="lg:col-span-3 space-y-6">
                         <div class="premium-card bg-white dark:bg-slate-800 p-8 border-none sticky top-24 shadow-xl shadow-indigo-50/50">
                             <h3 class="font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6">Valuation Overview</h3>
-                            
-                            <div class="space-y-4 mb-10">
-                                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
-                                    <div class="flex justify-between items-center text-slate-500 mb-1">
-                                        <span class="text-[9px] font-black uppercase tracking-widest">Gross Estimation</span>
-                                        <span class="font-bold text-xs" id="subtotal-display">RM 0.00</span>
+                                                       <div class="space-y-4 mb-10">
+                                {{-- Stats Row --}}
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl text-center">
+                                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Total Items</span>
+                                        <span class="text-xl font-black text-slate-800 dark:text-white mt-0.5 block" id="summary-item-count">0</span>
                                     </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Strategies</span>
-                                        <span class="font-black text-[9px] uppercase text-indigo-500">Auto-Applied</span>
+                                    <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl text-center">
+                                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Total Qty</span>
+                                        <span class="text-xl font-black text-slate-800 dark:text-white mt-0.5 block" id="summary-total-qty">0</span>
                                     </div>
                                 </div>
 
-                                <div class="px-2 pt-4">
+                                {{-- Selected Bundles Section --}}
+                                <div class="border-t border-slate-100 dark:border-slate-700/50 pt-3">
+                                    <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Selected Bundles</h4>
+                                    <div id="summary-bundles-list" class="space-y-2 max-h-48 overflow-y-auto">
+                                        <div class="text-[10px] text-slate-400 font-medium italic">No bundles selected</div>
+                                    </div>
+                                </div>
+
+                                {{-- Additional Single Items Section --}}
+                                <div class="border-t border-slate-100 dark:border-slate-700/50 pt-3">
+                                    <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Additional Single Items</h4>
+                                    <div id="summary-singles-list" class="space-y-2 max-h-48 overflow-y-auto">
+                                        <div class="text-[10px] text-slate-400 font-medium italic">No single items added</div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                                    <div class="flex justify-between items-center text-slate-500 mb-1">
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Subtotal</span>
+                                        <span class="font-bold text-xs" id="subtotal-display">RM 0.00</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-slate-500 mb-1">
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Estimated Tax (6%)</span>
+                                        <span class="font-bold text-xs" id="tax-display">RM 0.00</span>
+                                    </div>
+                                </div>
+
+                                <div class="px-2 pt-4 border-t-2 border-dashed border-indigo-100 dark:border-indigo-900/35">
                                     <div class="flex items-center gap-3 mb-2">
                                         <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -138,7 +190,7 @@
 
                             <button type="submit" class="w-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.2em] py-5 rounded-2xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-3">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Update Transaction
+                                Update Sale
                             </button>
                             
                             <a href="{{ route('sales.index') }}" class="block w-full text-center mt-6 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</a>
@@ -237,12 +289,16 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const container    = document.getElementById('items-container');
-        const addBtn       = document.getElementById('add-item');
-        const totalDisp    = document.getElementById('total-estimation');
-        const subtotalDisp = document.getElementById('subtotal-display');
-        const template     = document.getElementById('item-row-template');
-        let itemIndex      = 0;
+        const bundlesContainer = document.getElementById('bundles-container');
+        const singlesContainer = document.getElementById('singles-container');
+        const addSingleBtn     = document.getElementById('add-single-item-btn');
+        const totalDisp        = document.getElementById('total-estimation');
+        const subtotalDisp     = document.getElementById('subtotal-display');
+        const taxDisp          = document.getElementById('tax-display');
+        const template         = document.getElementById('item-row-template');
+        const itemCountBadge   = document.getElementById('summary-item-count');
+        const totalQtyBadge    = document.getElementById('summary-total-qty');
+        let itemIndex          = 0;
 
         // ── Event Combobox Logic ────────────────────────────────────────────
         const eventCombobox   = document.querySelector('.event-combobox');
@@ -259,22 +315,23 @@
                 item.style.display = match ? '' : 'none';
                 if (match) anyVisible = true;
             });
-            noSuggestions.classList.toggle('hidden', anyVisible || q === '');
-            eventPanel.classList.toggle('hidden', !anyVisible && q === '');
+            if (noSuggestions) noSuggestions.classList.toggle('hidden', anyVisible || q === '');
+            if (eventPanel) eventPanel.classList.toggle('hidden', !anyVisible && q === '');
         }
 
-        eventInput.addEventListener('focus', () => {
-            if (suggestionItems.length > 0) { eventPanel.classList.remove('hidden'); filterEvents(eventInput.value); }
-        });
-        eventInput.addEventListener('input', () => { eventPanel.classList.remove('hidden'); filterEvents(eventInput.value); });
-        suggestionItems.forEach(item => {
-            item.addEventListener('click', () => { eventInput.value = item.dataset.value; eventPanel.classList.add('hidden'); });
-        });
-        document.addEventListener('click', (e) => { if (!eventCombobox.contains(e.target)) eventPanel.classList.add('hidden'); });
+        if (eventInput) {
+            eventInput.addEventListener('focus', () => {
+                if (suggestionItems.length > 0) { eventPanel.classList.remove('hidden'); filterEvents(eventInput.value); }
+            });
+            eventInput.addEventListener('input', () => { eventPanel.classList.remove('hidden'); filterEvents(eventInput.value); });
+            suggestionItems.forEach(item => {
+                item.addEventListener('click', () => { eventInput.value = item.dataset.value; eventPanel.classList.add('hidden'); });
+            });
+            document.addEventListener('click', (e) => { if (eventCombobox && !eventCombobox.contains(e.target)) eventPanel.classList.add('hidden'); });
+        }
 
         // ── Row Builder ─────────────────────────────────────────────────────
         function buildRow(opts = {}) {
-            // opts: { detailId, promoId, promoName, productId, productName, volume, price, qty, lockCombobox, showRemove }
             const idx  = itemIndex++;
             const frag = template.content.cloneNode(true);
             const row  = frag.querySelector('.sale-item-row');
@@ -286,18 +343,20 @@
                 row.querySelector('.detail-id-input').value = opts.detailId;
             }
 
-            // Bundle badge
+            // Bundle configurations
             if (opts.promoId) {
                 row.dataset.promoId   = opts.promoId;
                 row.dataset.promoName = opts.promoName || '';
-                row.classList.add('border-l-4', 'border-violet-400', 'bg-violet-50/40', 'dark:bg-violet-500/5');
-                const badge = row.querySelector('.bundle-badge');
-                badge.classList.remove('hidden');
-                badge.querySelector('.bundle-badge-name').textContent = opts.promoName || '';
+                row.classList.add('border-violet-200', 'bg-violet-50/40', 'dark:bg-violet-500/5');
+                
+                // Hide bundle options in the row template because we group them externally
+                row.querySelector('.bundle-badge').classList.add('hidden');
 
-                // Lock strategy link dropdown (hide both dropdown containers)
                 const promoSelect = row.querySelector('.promo-select');
-                promoSelect.value = opts.promoId;
+                if (promoSelect) {
+                    promoSelect.innerHTML = `<option value="${opts.promoId}">${opts.promoName}</option>`;
+                    promoSelect.value = opts.promoId;
+                }
                 row.querySelector('.promo-select-container').classList.add('hidden');
                 row.querySelector('.item-type-container').classList.add('hidden');
             }
@@ -310,19 +369,14 @@
                 const lbl = row.querySelector('.combobox-label');
                 lbl.textContent = opts.productName ? `${opts.productName} (${opts.volume || ''})` : 'Select an item...';
                 lbl.classList.remove('text-slate-400');
-                lbl.classList.add('text-slate-700', 'dark:text-slate-200');
-            }
+                lbl.classList.add('text-slate-700', 'dark:text-slate-200', 'font-bold');
 
-            // Lock combobox for bundle items
-            if (opts.lockCombobox) {
-                row.querySelector('.combobox-trigger').disabled = true;
-                row.querySelector('.combobox-trigger').classList.add('opacity-60', 'cursor-not-allowed');
-            }
-
-            // Set promo_id on select
-            if (opts.promoId) {
-                const sel = row.querySelector('.promo-select');
-                sel.value = opts.promoId;
+                if (opts.promoId) {
+                    const trigger = row.querySelector('.combobox-trigger');
+                    trigger.disabled = true;
+                    trigger.classList.add('opacity-75', 'cursor-not-allowed', 'bg-slate-50', 'dark:bg-slate-900');
+                    trigger.classList.remove('hover:border-violet-300');
+                }
             }
 
             // Quantity
@@ -330,280 +384,392 @@
                 row.querySelector('.quantity-input').value = opts.qty;
             }
 
-            // Remove button
-            if (opts.showRemove !== false) {
-                row.querySelector('.remove-item').classList.remove('hidden');
-            }
-
-            return row;
-        }
+            // Set promo_id on select
+            if (opts.promoId) {
+                const sel = row.querySelector('.promo-select');
+                if (sel) sel.value = opts.promoId;
+                
+                // Add hidden promo_id input just to be safe
 
         // ── Init Combobox ────────────────────────────────────────────────────
         function initCombobox(combobox) {
             const trigger  = combobox.querySelector('.combobox-trigger');
-            const panel    = combobox.querySelector('.combobox-panel');
-            const search   = combobox.querySelector('.combobox-search');
-            const list     = combobox.querySelector('.combobox-list');
             const label    = combobox.querySelector('.combobox-label');
-            const arrow    = combobox.querySelector('.combobox-arrow');
             const hidden   = combobox.querySelector('.product-id-input');
-            const emptyMsg = combobox.querySelector('.combobox-empty');
-
-            function openPanel() {
-                panel.classList.remove('hidden');
-                arrow.style.transform = 'rotate(180deg)';
-                search.value = '';
-                filterOptions('');
-                search.focus();
-            }
-            function closePanel() {
-                panel.classList.add('hidden');
-                arrow.style.transform = '';
-            }
 
             trigger.addEventListener('click', (e) => {
                 if (trigger.disabled) return;
                 e.stopPropagation();
-                panel.classList.contains('hidden') ? openPanel() : closePanel();
-            });
 
-            search.addEventListener('input', () => filterOptions(search.value.trim()));
+                if (portalOpen && activeCombobox === combobox) {
+                    closePortal();
+                    return;
+                }
+                if (portalOpen) closePortal();
 
-            function filterOptions(query) {
-                const q = query.toLowerCase();
-                let anyVisible = false;
-                list.querySelectorAll('.combobox-option').forEach(opt => {
-                    const match = opt.dataset.label.toLowerCase().includes(q);
-                    opt.style.display = match ? '' : 'none';
-                    if (match) anyVisible = true;
-                });
-                emptyMsg.classList.toggle('hidden', anyVisible);
-            }
+                openPortal(trigger, combobox, (opt) => {
+                    hidden.value         = opt.dataset.value;
+                    hidden.dataset.price = opt.dataset.price;
 
-            list.querySelectorAll('.combobox-option').forEach(opt => {
-                opt.addEventListener('click', () => {
-                    hidden.value           = opt.dataset.value;
-                    hidden.dataset.price   = opt.dataset.price;
-                    const name = opt.querySelector('.item-name-text').textContent.trim();
-                    const vol  = opt.querySelector('.item-volume-text').textContent.trim();
-                    label.textContent = `${name} (${vol})`;
-                    label.classList.remove('text-slate-400');
-                    label.classList.add('text-slate-700', 'dark:text-slate-200');
-                    closePanel();
-                    const row = combobox.closest('.sale-item-row');
-                    handleProductChange(row, opt.dataset.value);
+                    const name       = opt.querySelector('.item-name-text')?.textContent.trim() || '';
+                    const vol        = opt.querySelector('.item-volume-text')?.textContent.trim() || '';
+                    const code       = opt.dataset.code       || '';
+                    const price      = opt.dataset.price      || '0';
+                    const stock      = opt.dataset.stock      || '0';
+                    const stockLabel = opt.dataset.stockLabel || 'In Stock';
+                    const stockCls   = opt.dataset.stockClass || 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+                    const initials   = opt.dataset.initials   || name.substring(0, 2).toUpperCase();
+                    const avatarCol  = opt.dataset.avatarColor|| '#7c3aed';
+
+                    const defState = combobox.querySelector('.trigger-default');
+                    const selState = combobox.querySelector('.trigger-selected');
+                    const avatar   = selState.querySelector('.selected-avatar');
+                    avatar.textContent = initials;
+                    avatar.style.background = `linear-gradient(135deg, ${avatarCol}, ${avatarCol}cc)`;
+                    selState.querySelector('.selected-name').textContent   = name;
+                    selState.querySelector('.selected-volume').textContent = vol;
+                    selState.querySelector('.selected-code').textContent   = code;
+                    const stockBadge = selState.querySelector('.selected-stock-badge');
+                    stockBadge.textContent = `${stockLabel} (${stock})`;
+                    stockBadge.className   = 'selected-stock-badge text-[9px] font-black px-1.5 py-0.5 rounded-md ' + stockCls;
+                    selState.querySelector('.selected-price').textContent  = `RM ${parseFloat(price).toFixed(2)}`;
+
+                    defState.classList.add('hidden');
+                    selState.classList.remove('hidden');
+                    selState.classList.add('flex');
+                    trigger.classList.remove('border-slate-100', 'hover:border-violet-300');
+                    trigger.classList.add('border-violet-300', 'bg-violet-50/30');
+
+                    if (label) {
+                        label.textContent = `${name} (${vol})`;
+                        label.classList.remove('text-slate-400', 'font-medium');
+                        label.classList.add('text-slate-700', 'dark:text-slate-200', 'font-bold');
+                    }
+
                     calculateTotal();
                 });
             });
 
-            document.addEventListener('click', (e) => { if (!combobox.contains(e.target)) closePanel(); });
-        }
-
-        // ── Smart Item Type & Strategy link display logic ───────────────────
-        function handleProductChange(row, productId) {
-            const itemTypeContainer = row.querySelector('.item-type-container');
-            const itemTypeSelect    = row.querySelector('.item-type-select');
-            const promoSelectContainer = row.querySelector('.promo-select-container');
-            const promoSelect       = row.querySelector('.promo-select');
-
-            if (!productId) {
-                itemTypeContainer.classList.add('hidden');
-                promoSelectContainer.classList.add('hidden');
-                promoSelect.value = '';
-                return;
-            }
-
-            const pid = parseInt(productId);
-            // Find active promotions containing this product
-            const matchingPromos = window.promoData.filter(promo => promo.product_ids.includes(pid));
-            const hasBundle = matchingPromos.length > 0;
-
-            if (hasBundle) {
-                // Show option select container
-                itemTypeContainer.classList.remove('hidden');
-                itemTypeSelect.value = 'single';
-                
-                // Populate Strategy Link select with matching promos
-                promoSelect.innerHTML = '<option value="">Select Bundle...</option>';
-                matchingPromos.forEach(promo => {
-                    const opt = document.createElement('option');
-                    opt.value = promo.id;
-                    opt.textContent = promo.name;
-                    promoSelect.appendChild(opt);
-                });
-                
-                promoSelectContainer.classList.add('hidden');
-                promoSelect.value = '';
-            } else {
-                // Hide bundle section completely
-                itemTypeContainer.classList.add('hidden');
-                itemTypeSelect.value = 'single';
-                promoSelectContainer.classList.add('hidden');
-                promoSelect.innerHTML = '<option value="">None</option>';
-                promoSelect.value = '';
-            }
+            document.addEventListener('click', (e) => {
+                if (activeCombobox === combobox && !combobox.contains(e.target) && !cbPortal.contains(e.target)) {
+                    closePortal();
+                }
+            });
         }
 
         // ── Row Listeners ────────────────────────────────────────────────────
         function attachRowListeners(row) {
             row.querySelector('.quantity-input').addEventListener('input', calculateTotal);
+            
+            const qtyMinus = row.querySelector('.qty-minus');
+            const qtyPlus  = row.querySelector('.qty-plus');
+            const qtyInput = row.querySelector('.quantity-input');
+
+            if (qtyMinus) {
+                qtyMinus.addEventListener('click', () => {
+                    const val = parseInt(qtyInput.value) || 1;
+                    if (val > 1) { qtyInput.value = val - 1; calculateTotal(); }
+                });
+            }
+            if (qtyPlus) {
+                qtyPlus.addEventListener('click', () => {
+                    qtyInput.value = (parseInt(qtyInput.value) || 0) + 1;
+                    calculateTotal();
+                });
+            }
+
             const removeBtn = row.querySelector('.remove-item');
             if (removeBtn) {
-                removeBtn.addEventListener('click', () => { row.remove(); updateRemoveButtons(); calculateTotal(); });
+                removeBtn.addEventListener('click', () => {
+                    row.remove();
+                    reindexRows();
+                    calculateTotal();
+                });
             }
+        }
 
-            // Item type selector logic
-            const itemTypeSelect = row.querySelector('.item-type-select');
-            const promoSelectContainer = row.querySelector('.promo-select-container');
-            const promoSelect = row.querySelector('.promo-select');
-
-            if (itemTypeSelect) {
-                itemTypeSelect.addEventListener('change', function () {
-                    if (this.value === 'bundle') {
-                        promoSelectContainer.classList.remove('hidden');
-                    } else {
-                        promoSelectContainer.classList.add('hidden');
-                        promoSelect.value = '';
-                        calculateTotal();
+        // ── Re-index rows ────────────────────────────────────────────────
+        function reindexRows() {
+            const allRows = document.querySelectorAll('.sale-item-row');
+            allRows.forEach((row, i) => {
+                row.querySelectorAll('[name]').forEach(el => {
+                    el.setAttribute('name', el.getAttribute('name').replace(/items\[\d+\]/g, `items[${i}]`));
+                });
+                row.querySelectorAll('input[type="hidden"]').forEach(el => {
+                    if (el.name) {
+                        el.name = el.name.replace(/items\[\d+\]/g, `items[${i}]`);
                     }
                 });
-            }
-
-            // Strategy Link change → bundle expansion (for single item rows only)
-            if (promoSelect && !row.dataset.promoId) {
-                promoSelect.addEventListener('change', function () {
-                    const promoId = this.value;
-                    if (promoId) expandBundle(promoId, row);
-                });
-            }
-        }
-
-        // ── Calculate Total ──────────────────────────────────────────────────
-        function calculateTotal() {
-            let total = 0;
-            container.querySelectorAll('.sale-item-row').forEach(row => {
-                const hidden   = row.querySelector('.product-id-input');
-                const qtyInput = row.querySelector('.quantity-input');
-                if (hidden && hidden.value && hidden.dataset.price && qtyInput.value) {
-                    total += parseFloat(hidden.dataset.price) * parseInt(qtyInput.value);
-                }
-            });
-            const formatted = `RM ${total.toFixed(2)}`;
-            totalDisp.innerText    = formatted;
-            subtotalDisp.innerText = formatted;
-        }
-
-        // ── Update remove button visibility ──────────────────────────────────
-        function updateRemoveButtons() {
-            const rows = container.querySelectorAll('.sale-item-row');
-            rows.forEach(row => {
-                const btn = row.querySelector('.remove-item');
-                if (btn) btn.classList.toggle('hidden', rows.length <= 1);
+                const cb = row.querySelector('.item-combobox');
+                if (cb) cb.dataset.index = i;
             });
         }
 
         // ── Add single item row ──────────────────────────────────────────────
-        function addSingleRow() {
-            const rowEl = buildRow({ showRemove: true });
-            container.appendChild(rowEl);
+        function addSingleRow(opts = {}) {
+            const rowEl = buildRow({
+                showRemove: opts.showRemove !== false,
+                productId: opts.productId || null,
+                productName: opts.productName || null,
+                volume: opts.volume || null,
+                price: opts.price || null,
+                qty: opts.qty || 1
+            });
+            singlesContainer.appendChild(rowEl);
             initCombobox(rowEl.querySelector('.item-combobox'));
             attachRowListeners(rowEl);
             updateRemoveButtons();
             calculateTotal();
         }
 
-        // ── Bundle Expansion (AJAX) ──────────────────────────────────────────
-        async function expandBundle(promoId, triggerRow) {
-            const promoName = triggerRow?.querySelector('.promo-select')?.selectedOptions[0]?.text || triggerRow?.dataset?.promoName || '';
-            try {
-                const res = await fetch(`${window.bundleItemsBaseUrl}/${promoId}/bundle-items`, {
-                    headers: { 'X-CSRF-TOKEN': window.csrfToken, 'Accept': 'application/json' }
-                });
-                const data = await res.json();
+        // ── Get or Create Bundle visual group container ──────────────────
+        function getOrCreateBundleGroup(promoId, promoName) {
+            let groupEl = bundlesContainer.querySelector(`.bundle-group[data-promo-id="${promoId}"]`);
+            if (!groupEl) {
+                const empty = bundlesContainer.querySelector('.bundles-empty-state');
+                if (empty) empty.classList.add('hidden');
 
-                if (!data.items || data.items.length === 0) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'No Products Found',
-                        text: 'This promotion has no associated products. It may need to be linked to an association rule first.',
-                        confirmButtonColor: '#4f46e5'
-                    });
-                    if (triggerRow && triggerRow.isConnected) triggerRow.querySelector('.promo-select').value = '';
-                    return;
-                }
+                const promo = window.promoData.find(p => p.id == promoId);
+                const discount = promo ? (promo.discount ?? 10) : 10;
 
-                if (triggerRow && triggerRow.isConnected) triggerRow.remove();
+                groupEl = document.createElement('div');
+                groupEl.className = 'bundle-group bg-violet-50/20 border border-violet-100 dark:border-slate-700 rounded-2xl p-4 mb-4';
+                groupEl.dataset.promoId = promoId;
+                groupEl.dataset.promoName = promoName;
+                groupEl.style.overflow = 'visible';
+                
+                groupEl.innerHTML = `
+                    <div class="flex items-center justify-between mb-3 pb-3 border-b border-violet-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-violet-600 animate-pulse"></div>
+                            <span class="text-xs font-black uppercase tracking-widest text-violet-750 dark:text-violet-400">Bundle: ${promoName}</span>
+                            <span class="px-2 py-0.5 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-[9px] font-black uppercase tracking-wider rounded-md">${discount}% Off</span>
+                        </div>
+                        <button type="button" class="remove-bundle-btn text-rose-500 hover:text-rose-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Remove Bundle
+                        </button>
+                    </div>
+                    <div class="bundle-items-rows space-y-3" style="overflow:visible !important;"></div>
+                `;
 
-                data.items.forEach(item => {
-                    const rowEl = buildRow({
-                        promoId:      promoId,
-                        promoName:    promoName,
-                        productId:    item.item_id,
-                        productName:  item.item_name,
-                        volume:       item.volume,
-                        price:        item.price,
-                        qty:          1,
-                        lockCombobox: true,
-                        showRemove:   true,
-                    });
-                    container.appendChild(rowEl);
-                    initCombobox(rowEl.querySelector('.item-combobox'));
-                    attachRowListeners(rowEl);
-                });
-
-                updateRemoveButtons();
-                calculateTotal();
-
-                Swal.fire({
-                    icon: 'success',
-                    title: `Bundle Added`,
-                    text: `${data.items.length} item(s) from "${promoName}" added.`,
-                    timer: 2000,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end'
+                groupEl.querySelector('.remove-bundle-btn').addEventListener('click', () => {
+                    groupEl.remove();
+                    
+                    const remaining = bundlesContainer.querySelectorAll('.bundle-group');
+                    if (remaining.length === 0) {
+                        const empty = bundlesContainer.querySelector('.bundles-empty-state');
+                        if (empty) empty.classList.remove('hidden');
+                    }
+                    
+                    reindexRows();
+                    calculateTotal();
                 });
 
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load bundle items. Please try again.', confirmButtonColor: '#4f46e5' });
+                bundlesContainer.appendChild(groupEl);
             }
+            return groupEl.querySelector('.bundle-items-rows');
+        }
+
+        // ── Calculate Total ──────────────────────────────────────────────────
+        function calculateTotal() {
+            let total = 0, totalQty = 0, itemCnt = 0;
+            const summaryBundlesList = document.getElementById('summary-bundles-list');
+            const summarySinglesList = document.getElementById('summary-singles-list');
+
+            const bundlesData = {};
+            const singlesData = [];
+
+            const bundleRows = bundlesContainer.querySelectorAll('.sale-item-row');
+            bundleRows.forEach(row => {
+                const promoId = row.dataset.promoId;
+                const promoName = row.dataset.promoName;
+                const hidden   = row.querySelector('.product-id-input');
+                const qtyInput = row.querySelector('.quantity-input');
+                const rowSubEl = row.querySelector('.row-subtotal');
+                if (hidden && hidden.value && hidden.dataset.price && qtyInput) {
+                    const price = parseFloat(hidden.dataset.price);
+                    const qty   = parseInt(qtyInput.value) || 0;
+                    const productName = row.querySelector('.selected-name')?.textContent || 'Product';
+                    
+                    const promo = window.promoData.find(p => p.id == promoId);
+                    const discountPercent = promo ? (promo.discount ?? 10) : 10;
+                    const discountedPrice = price * (1 - (discountPercent / 100));
+                    const sub = discountedPrice * qty;
+
+                    total += sub;
+                    totalQty += qty;
+                    itemCnt++;
+                    
+                    if (rowSubEl) {
+                        rowSubEl.innerHTML = `
+                            <span class="line-through text-[11px] text-slate-400 mr-1.5">RM ${(price * qty).toFixed(2)}</span>
+                            <span class="text-violet-650 font-black">RM ${sub.toFixed(2)}</span>
+                            <span class="text-[9px] text-emerald-500 font-bold ml-1">(${discountPercent}% Off)</span>
+                        `;
+                    }
+
+                    if (!bundlesData[promoId]) {
+                        bundlesData[promoId] = {
+                            name: promoName,
+                            discount: discountPercent,
+                            items: []
+                        };
+                    }
+                    bundlesData[promoId].items.push({
+                        name: productName,
+                        qty: qty,
+                        subtotal: sub
+                    });
+                }
+            });
+
+            const singleRows = singlesContainer.querySelectorAll('.sale-item-row');
+            singleRows.forEach(row => {
+                const hidden   = row.querySelector('.product-id-input');
+                const qtyInput = row.querySelector('.quantity-input');
+                const rowSubEl = row.querySelector('.row-subtotal');
+                if (hidden && hidden.value && hidden.dataset.price && qtyInput) {
+                    const price = parseFloat(hidden.dataset.price);
+                    const qty   = parseInt(qtyInput.value) || 0;
+                    const productName = row.querySelector('.selected-name')?.textContent || 'Product';
+                    const sub   = price * qty;
+                    
+                    total += sub;
+                    totalQty += qty;
+                    itemCnt++;
+                    
+                    if (rowSubEl) rowSubEl.textContent = `RM ${sub.toFixed(2)}`;
+
+                    singlesData.push({
+                        name: productName,
+                        qty: qty,
+                        subtotal: sub
+                    });
+                }
+            });
+
+            if (summaryBundlesList) {
+                summaryBundlesList.innerHTML = '';
+                const promoIds = Object.keys(bundlesData);
+                if (promoIds.length === 0) {
+                    summaryBundlesList.innerHTML = '<div class="text-[10px] text-slate-400 font-medium italic">No bundles selected</div>';
+                } else {
+                    promoIds.forEach(id => {
+                        const b = bundlesData[id];
+                        let bHtml = `
+                            <div class="bg-violet-50/50 dark:bg-slate-900/30 border border-violet-100 dark:border-slate-800 rounded-xl p-2.5">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] font-black text-violet-750 dark:text-violet-400 truncate max-w-[70%]">${b.name}</span>
+                                    <span class="text-[8px] font-black bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 px-1.5 py-0.5 rounded-md">${b.discount}% OFF</span>
+                                </div>
+                                <div class="space-y-1 pl-2 border-l border-violet-150 dark:border-violet-800">
+                        `;
+                        let bSum = 0;
+                        b.items.forEach(item => {
+                            bSum += item.subtotal;
+                            bHtml += `
+                                <div class="flex justify-between text-[9px] text-slate-500 dark:text-slate-400 font-semibold">
+                                    <span class="truncate max-w-[70%]">${item.qty}x ${item.name}</span>
+                                    <span class="font-bold">RM ${item.subtotal.toFixed(2)}</span>
+                                </div>
+                            `;
+                        });
+                        bHtml += `
+                                </div>
+                                <div class="flex justify-between text-[9px] font-black text-violet-700 dark:text-violet-400 mt-1.5 pt-1.5 border-t border-dashed border-violet-150 dark:border-violet-800">
+                                    <span>Bundle Total</span>
+                                    <span>RM ${bSum.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `;
+                        summaryBundlesList.innerHTML += bHtml;
+                    });
+                }
+            }
+
+            if (summarySinglesList) {
+                summarySinglesList.innerHTML = '';
+                if (singlesData.length === 0) {
+                    summarySinglesList.innerHTML = '<div class="text-[10px] text-slate-400 font-medium italic">No single items added</div>';
+                } else {
+                    singlesData.forEach(item => {
+                        summarySinglesList.innerHTML += `
+                            <div class="flex justify-between items-center text-[10px] text-slate-650 dark:text-slate-400 font-semibold bg-slate-50 dark:bg-slate-900/30 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <span class="truncate max-w-[65%]">${item.qty}x ${item.name}</span>
+                                <span class="font-black text-slate-800 dark:text-slate-200">RM ${item.subtotal.toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            const tax   = total * 0.06;
+            const grand = total + tax;
+            const formatted = `RM ${grand.toFixed(2)}`;
+
+            if (totalDisp)    totalDisp.innerText    = formatted;
+            if (subtotalDisp) subtotalDisp.innerText = `RM ${total.toFixed(2)}`;
+            if (taxDisp)      taxDisp.innerText      = `RM ${tax.toFixed(2)}`;
+            if (itemCountBadge) itemCountBadge.textContent = itemCnt;
+            if (totalQtyBadge)  totalQtyBadge.textContent  = totalQty;
+        }
+
+        // ── Update remove button visibility ──────────────────────────────────
+        function updateRemoveButtons() {
+            const rows = document.querySelectorAll('.sale-item-row');
+            rows.forEach(row => {
+                const btn = row.querySelector('.remove-item');
+                if (btn) btn.classList.toggle('hidden', rows.length <= 1);
+            });
         }
 
         // ── Seed existing sale items from DB ─────────────────────────────────
         if (window.existingSaleItems && window.existingSaleItems.length > 0) {
             window.existingSaleItems.forEach(si => {
                 const isBundle = !!si.promo_id;
-                const rowEl = buildRow({
-                    detailId:     si.detail_id,
-                    promoId:      si.promo_id || null,
-                    promoName:    si.promo_name || '',
-                    productId:    si.product_id,
-                    productName:  si.product_name,
-                    volume:       si.volume,
-                    price:       si.price,
-                    qty:          si.quantity,
-                    lockCombobox: isBundle,
-                    showRemove:   true,
-                });
-                container.appendChild(rowEl);
-                initCombobox(rowEl.querySelector('.item-combobox'));
-                attachRowListeners(rowEl);
-                if (!isBundle) {
-                    handleProductChange(rowEl, si.product_id);
+                if (isBundle) {
+                    const groupRowsContainer = getOrCreateBundleGroup(si.promo_id, si.promo_name);
+                    const rowEl = buildRow({
+                        detailId:     si.detail_id,
+                        promoId:      si.promo_id,
+                        promoName:    si.promo_name,
+                        productId:    si.product_id,
+                        productName:  si.product_name,
+                        volume:       si.volume,
+                        price:        si.price,
+                        qty:          si.quantity,
+                        showRemove:   true
+                    });
+                    groupRowsContainer.appendChild(rowEl);
+                    initCombobox(rowEl.querySelector('.item-combobox'));
+                    attachRowListeners(rowEl);
+                } else {
+                    const rowEl = buildRow({
+                        detailId:     si.detail_id,
+                        productId:    si.product_id,
+                        productName:  si.product_name,
+                        volume:       si.volume,
+                        price:        si.price,
+                        qty:          si.quantity,
+                        showRemove:   true
+                    });
+                    singlesContainer.appendChild(rowEl);
+                    initCombobox(rowEl.querySelector('.item-combobox'));
+                    attachRowListeners(rowEl);
                 }
             });
+            reindexRows();
             updateRemoveButtons();
             calculateTotal();
         } else {
-            // Fallback: show one blank row
-            const firstRow = buildRow({ showRemove: false });
-            container.appendChild(firstRow);
-            initCombobox(firstRow.querySelector('.item-combobox'));
-            attachRowListeners(firstRow);
+            addSingleRow({ showRemove: false });
         }
 
         // ── Add Item Button ─────────────────────────────────────────────────
-        addBtn.addEventListener('click', addSingleRow);
+        if (addSingleBtn) {
+            addSingleBtn.addEventListener('click', () => addSingleRow({ showRemove: true }));
+        }
 
         const saleDateInput = document.getElementById('sale_date_input');
         const validationMsg = document.getElementById('date-validation-msg');
@@ -629,7 +795,6 @@
                     confirmButtonColor: '#4f46e5'
                 });
                 
-                // Reset to today
                 const now = new Date();
                 let hour = now.getHours();
                 if (hour < 8 || hour > 20) {
@@ -648,10 +813,8 @@
             const hour = selectedDateTime.getHours();
             const minute = selectedDateTime.getMinutes();
             const timeValue = hour * 60 + minute;
-            const startLimit = 8 * 60; // 8:00 AM
-            const endLimit = 20 * 60;  // 8:00 PM
             
-            if (timeValue < startLimit || timeValue > endLimit) {
+            if (timeValue < 480 || timeValue > 1200) {
                 validationMsg.textContent = "Transaction time must be between 8:00 AM and 8:00 PM only.";
                 validationMsg.classList.remove('hidden');
                 
@@ -693,15 +856,14 @@
                 return;
             }
 
-            const rows = container.querySelectorAll('.sale-item-row');
+            const rows = document.querySelectorAll('.sale-item-row');
             let hasUnfilled = false;
             const pairs = [];
             let hasDuplicate = false;
 
             rows.forEach(row => {
                 const pid   = row.querySelector('.product-id-input')?.value?.trim();
-                const promoSelect = row.querySelector('.promo-select');
-                const promoId = promoSelect ? promoSelect.value : '';
+                let promoId = row.dataset.promoId || '';
                 if (!pid) { hasUnfilled = true; return; }
                 const key = pid + '|' + promoId;
                 if (pairs.includes(key)) hasDuplicate = true;
