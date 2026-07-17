@@ -82,7 +82,7 @@
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{{ $sale->sale_date }}</td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800 dark:text-white">TXN-{{ str_pad($sale->transaction_id, 6, '0', STR_PAD_LEFT) }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{{ $sale->salesman->name ?? 'N/A' }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{{ $sale->salesmen->name ?? 'N/A' }}</td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-indigo-600 text-right">{{ number_format($sale->total_amount, 2) }}</td>
                                     </tr>
                                     @endforeach
