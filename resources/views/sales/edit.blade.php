@@ -13,11 +13,22 @@
     {{-- Pass PHP data to JS --}}
     @php
         $promoDataMapped = $promotions->map(function($p) {
+            $productIds = collect();
+            if ($p->rule_id && $p->analysis) {
+                $productIds = $productIds->merge($p->analysis->antecedentIds());
+                $productIds->push($p->analysis->consequent);
+            }
+            foreach ($p->associationRules as $rule) {
+                $productIds = $productIds->merge($rule->antecedentIds());
+                $productIds->push($rule->consequent);
+            }
+            $uniqueIds = $productIds->unique()->filter()->values()->toArray();
+
             return [
                 'id' => $p->promo_id,
                 'name' => $p->promo_name,
                 'discount' => $p->final_discount ?? 10,
-                'product_ids' => $p->products->pluck('item_id')->toArray()
+                'product_ids' => $uniqueIds
             ];
         })->values();
 
