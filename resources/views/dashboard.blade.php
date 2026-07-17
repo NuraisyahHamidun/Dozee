@@ -484,29 +484,7 @@
                                 </div>
                             </div>
 
-                            <!-- Slide 6: Apriori Recommendations -->
-                            <div class="swiper-slide">
-                                <div class="px-8 pt-7 pb-6 flex flex-col gap-5">
-                                    <!-- Header -->
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 dark:bg-blue-500/10 mb-2">AI Insights</span>
-                                            <h3 class="text-xl font-bold text-slate-800 dark:text-white heading-font">Bundle Recommendations</h3>
-                                            <p class="text-xs text-slate-400 font-medium mt-0.5">Automated association recommendations derived from sales history</p>
-                                        </div>
-                                    </div>
 
-                                    <!-- Clean Empty State Card -->
-                                    <div class="bg-white dark:bg-slate-800/80 p-12 rounded-2xl border border-[#E6ECFA] dark:border-slate-700/50 flex flex-col items-center justify-center text-center h-80 shadow-sm">
-                                        <div class="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 text-[#4F7CFF] rounded-full flex items-center justify-center mb-4">
-                                            <!-- Soft analytics icon -->
-                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                        </div>
-                                        <h4 class="text-sm font-bold text-slate-800 dark:text-white heading-font">No Insights Available</h4>
-                                        <p class="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">Run AI Bundle Recommendation Engine to generate insights.</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Navigation Controls -->
