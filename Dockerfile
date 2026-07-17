@@ -50,7 +50,6 @@ RUN mkdir -p storage/framework/cache/data \
     && mkdir -p storage/framework/views \
     && mkdir -p storage/logs \
     && mkdir -p storage/certs \
-    && curl -sS https://api.aiven.io/v1/ca.pem -o storage/certs/ca.pem \
     && chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data /var/www/html
 
