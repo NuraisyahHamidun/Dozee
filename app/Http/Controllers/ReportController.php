@@ -198,10 +198,10 @@ class ReportController extends Controller
             $query->where('promo_id', $promoId);
         }
 
-        $saleItems = $query->orderBy(
-            DB::raw('(select sale_date from sales_transaction where sales_transaction.transaction_id = transaction_detail.transaction_id)'),
-            'desc'
-        )->get();
+        $saleItems = $query->select('transaction_detail.*')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->orderBy('sales_transaction.sale_date', 'desc')
+            ->get();
 
         $totalQuantity = $saleItems->sum('quantity');
         $totalPrice = $saleItems->sum(function($item) {
@@ -307,10 +307,10 @@ class ReportController extends Controller
                 $query->where('promo_id', $promoId);
             }
 
-            $saleItems = $query->orderBy(
-                DB::raw('(select sale_date from sales_transaction where sales_transaction.transaction_id = transaction_detail.transaction_id)'),
-                'desc'
-            )->get();
+            $saleItems = $query->select('transaction_detail.*')
+                ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+                ->orderBy('sales_transaction.sale_date', 'desc')
+                ->get();
 
             $totalQuantity = $saleItems->sum('quantity');
             $totalPrice = $saleItems->sum(function($item) {

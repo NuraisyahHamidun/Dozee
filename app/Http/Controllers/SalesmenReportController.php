@@ -49,10 +49,10 @@ class SalesmenReportController extends Controller
         }
 
         // Fetch matched details
-        $saleItems = $query->orderBy(
-            DB::raw('(select sale_date from sales_transaction where sales_transaction.transaction_id = transaction_detail.transaction_id)'),
-            'desc'
-        )->paginate(15)->withQueryString();
+        $saleItems = $query->select('transaction_detail.*')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->orderBy('sales_transaction.sale_date', 'desc')
+            ->paginate(15)->withQueryString();
 
         // Calculate statistics based on the same query filters (unpaginated)
         $statsQuery = SaleItem::whereHas('sale', function ($q) use ($salesmen, $startDate, $endDate) {
@@ -136,10 +136,10 @@ class SalesmenReportController extends Controller
             $query->where('item_id', $itemIdInput);
         }
 
-        $saleItems = $query->orderBy(
-            DB::raw('(select sale_date from sales_transaction where sales_transaction.transaction_id = transaction_detail.transaction_id)'),
-            'desc'
-        )->get();
+        $saleItems = $query->select('transaction_detail.*')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->orderBy('sales_transaction.sale_date', 'desc')
+            ->get();
 
         $myTotalSales = $saleItems->sum(function ($item) {
             return ($item->product->price ?? 0) * $item->quantity;
