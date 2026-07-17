@@ -1,4 +1,23 @@
 <x-guest-layout>
+    <style>
+        body {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.75)), url('{{ asset('images/salesmen-bg.jpg') }}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-attachment: fixed !important;
+            background-repeat: no-repeat !important;
+        }
+        
+        /* Make the logo text and brand name white to stand out against the dark background */
+        span.heading-font.text-slate-900 {
+            color: #ffffff !important;
+        }
+        
+        /* Adjust footer and logo text colors outside the glass container */
+        .text-slate-400, .italic {
+            color: rgba(255, 255, 255, 0.75) !important;
+        }
+    </style>
     <div class="mb-8">
         <h2 class="heading-font text-2xl font-black text-slate-800 tracking-tight">Salesmen Login</h2>
         <p class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-1">Access your sales account</p>
