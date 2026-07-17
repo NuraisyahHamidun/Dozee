@@ -37,41 +37,42 @@ class SalesmenReportController extends Controller
         }
 
         // Base query for transaction details (SaleItem)
-        $query = SaleItem::with(['sale', 'product'])
-            ->whereHas('sale', function ($q) use ($salesmen, $startDate, $endDate) {
-                $q->where('salesmen_id', $salesmen->salesmen_id)
-                  ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-            });
+        // Base query for transaction details (SaleItem)
+        $query = SaleItem::with(['sale.salesmen', 'product'])
+            ->select('transaction_detail.*')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->where('sales_transaction.salesmen_id', $salesmen->salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         // Filter by item
         if ($itemIdInput) {
-            $query->where('item_id', $itemIdInput);
+            $query->where('transaction_detail.item_id', $itemIdInput);
         }
 
         // Fetch matched details
-        $saleItems = $query->select('transaction_detail.*')
-            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
-            ->orderBy('sales_transaction.sale_date', 'desc')
+        $saleItems = $query->orderBy('sales_transaction.sale_date', 'desc')
             ->paginate(15)->withQueryString();
 
-        // Calculate statistics based on the same query filters (unpaginated)
-        $statsQuery = SaleItem::whereHas('sale', function ($q) use ($salesmen, $startDate, $endDate) {
-                $q->where('salesmen_id', $salesmen->salesmen_id)
-                  ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-            });
+        // Calculate statistics based on the same query filters using database aggregates (fast and memory-efficient)
+        $statsQuery = DB::table('transaction_detail')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->join('item', 'item.item_id', '=', 'transaction_detail.item_id')
+            ->where('sales_transaction.salesmen_id', $salesmen->salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($itemIdInput) {
-            $statsQuery->where('item_id', $itemIdInput);
+            $statsQuery->where('transaction_detail.item_id', $itemIdInput);
         }
 
-        $allFilteredItems = $statsQuery->get();
+        $statsResult = $statsQuery->select(
+            DB::raw('SUM(item.price * transaction_detail.quantity) as total_sales'),
+            DB::raw('COUNT(DISTINCT transaction_detail.transaction_id) as total_transactions'),
+            DB::raw('SUM(transaction_detail.quantity) as items_sold')
+        )->first();
 
-        $myTotalSales = $allFilteredItems->sum(function ($item) {
-            return ($item->product->price ?? 0) * $item->quantity;
-        });
-
-        $myTotalTransactions = $allFilteredItems->pluck('transaction_id')->unique()->count();
-        $myItemsSold = $allFilteredItems->sum('quantity');
+        $myTotalSales = (float) ($statsResult->total_sales ?? 0);
+        $myTotalTransactions = (int) ($statsResult->total_transactions ?? 0);
+        $myItemsSold = (int) ($statsResult->items_sold ?? 0);
 
         // Chart Trend Data: Grouped by date (Only own sales in range)
         $trendData = Sale::where('salesmen_id', $salesmen->salesmen_id)
@@ -126,20 +127,17 @@ class SalesmenReportController extends Controller
         }
 
         // Query details
-        $query = SaleItem::with(['sale', 'product'])
-            ->whereHas('sale', function ($q) use ($salesmen, $startDate, $endDate) {
-                $q->where('salesmen_id', $salesmen->salesmen_id)
-                  ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-            });
+        $query = SaleItem::with(['sale.salesmen', 'product'])
+            ->select('transaction_detail.*')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->where('sales_transaction.salesmen_id', $salesmen->salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($itemIdInput) {
-            $query->where('item_id', $itemIdInput);
+            $query->where('transaction_detail.item_id', $itemIdInput);
         }
 
-        $saleItems = $query->select('transaction_detail.*')
-            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
-            ->orderBy('sales_transaction.sale_date', 'desc')
-            ->get();
+        $saleItems = $query->orderBy('sales_transaction.sale_date', 'desc')->get();
 
         $myTotalSales = $saleItems->sum(function ($item) {
             return ($item->product->price ?? 0) * $item->quantity;

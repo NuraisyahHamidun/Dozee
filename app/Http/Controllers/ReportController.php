@@ -185,36 +185,62 @@ class ReportController extends Controller
         $eventName = $request->get('event_name', '');
         $isManager = Auth::guard('manager')->check();
 
-        $query = SaleItem::with(['sale.salesmen', 'product', 'promotion'])
-            ->whereHas('sale', function($q) use ($salesmen_id, $startDate, $endDate, $eventName) {
-                $q->where('salesmen_id', $salesmen_id)
-                  ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-                if ($eventName) {
-                    $q->where('event_name', 'like', '%' . $eventName . '%');
-                }
-            });
+        // Optimized stats calculation using database queries with joins
+        $statsQuery = DB::table('transaction_detail')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->join('item', 'item.item_id', '=', 'transaction_detail.item_id')
+            ->where('sales_transaction.salesmen_id', $salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        if ($promoId && $promoId !== 'All') {
-            $query->where('promo_id', $promoId);
+        if ($eventName) {
+            $statsQuery->where('sales_transaction.event_name', 'like', '%' . $eventName . '%');
         }
 
-        $saleItems = $query->select('transaction_detail.*')
+        if ($promoId && $promoId !== 'All') {
+            $statsQuery->where('transaction_detail.promo_id', $promoId);
+        }
+
+        $stats = $statsQuery->select(
+            DB::raw('SUM(transaction_detail.quantity) as total_quantity'),
+            DB::raw('SUM(item.price * transaction_detail.quantity) as total_price'),
+            DB::raw('COUNT(DISTINCT transaction_detail.transaction_id) as total_transactions')
+        )->first();
+
+        $totalQuantity = (int) ($stats->total_quantity ?? 0);
+        $totalPrice = (float) ($stats->total_price ?? 0);
+
+        // Fetch transaction IDs for total amount query
+        $transactionIdsQuery = DB::table('transaction_detail')
             ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
-            ->orderBy('sales_transaction.sale_date', 'desc')
-            ->get();
+            ->where('sales_transaction.salesmen_id', $salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        $totalQuantity = $saleItems->sum('quantity');
-        $totalPrice = $saleItems->sum(function($item) {
-            return ($item->product->price ?? 0) * $item->quantity;
-        });
+        if ($eventName) {
+            $transactionIdsQuery->where('sales_transaction.event_name', 'like', '%' . $eventName . '%');
+        }
 
-        $transactionIds = $saleItems->pluck('transaction_id')->unique();
+        if ($promoId && $promoId !== 'All') {
+            $transactionIdsQuery->where('transaction_detail.promo_id', $promoId);
+        }
+
+        $transactionIds = $transactionIdsQuery->distinct()->pluck('transaction_id')->toArray();
         $totalSaleAmount = Sale::whereIn('transaction_id', $transactionIds)->sum('total_amount');
 
-        // Fetch promotions for filter dropdown
+        // Fetch unique promo IDs directly from DB
+        $promoIds = DB::table('transaction_detail')
+            ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+            ->where('sales_transaction.salesmen_id', $salesmen_id)
+            ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->distinct()
+            ->pluck('promo_id')
+            ->filter()
+            ->toArray();
+
         $promotions = Promotion::where('status', 'Active')
-            ->orWhereIn('promo_id', $saleItems->pluck('promo_id')->filter()->unique())
+            ->orWhereIn('promo_id', $promoIds)
             ->get();
+
+        $saleItems = collect();
 
         // Load all sales (transactions) for bulk approval / list table
         $salesQuery = Sale::with(['saleItems.product'])
@@ -298,19 +324,16 @@ class ReportController extends Controller
 
         if ($format === 'pdf') {
             $query = SaleItem::with(['sale.salesmen', 'product', 'promotion'])
-                ->whereHas('sale', function($q) use ($salesmen_id, $startDate, $endDate) {
-                    $q->where('salesmen_id', $salesmen_id)
-                      ->whereBetween('sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-                });
+                ->select('transaction_detail.*')
+                ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
+                ->where('sales_transaction.salesmen_id', $salesmen_id)
+                ->whereBetween('sales_transaction.sale_date', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
             if ($promoId && $promoId !== 'All') {
-                $query->where('promo_id', $promoId);
+                $query->where('transaction_detail.promo_id', $promoId);
             }
 
-            $saleItems = $query->select('transaction_detail.*')
-                ->join('sales_transaction', 'sales_transaction.transaction_id', '=', 'transaction_detail.transaction_id')
-                ->orderBy('sales_transaction.sale_date', 'desc')
-                ->get();
+            $saleItems = $query->orderBy('sales_transaction.sale_date', 'desc')->get();
 
             $totalQuantity = $saleItems->sum('quantity');
             $totalPrice = $saleItems->sum(function($item) {
