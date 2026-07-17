@@ -18,8 +18,10 @@ class AnalysisController extends Controller
         $eventName = $request->get('event_name');
         $salesmanId = $request->get('salesman_id');
 
-        // Always run the analysis by default if transactions exist in the database (skip during unit tests to preserve mock rules)
-        if (Sale::exists() && !app()->runningUnitTests()) {
+        // Run analysis only if the database is empty of rules, or if recalculation is explicitly requested.
+        // This avoids 504 Timeout on free cloud hosting instances.
+        $hasRules = AprioriAnalysis::exists();
+        if (Sale::exists() && !app()->runningUnitTests() && (!$hasRules || $request->has('recalculate'))) {
             $aprioriService = new AprioriService($minSupport, $minConfidence);
             $aprioriService->run([
                 'event_name' => $eventName,
