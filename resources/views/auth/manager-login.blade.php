@@ -13,19 +13,28 @@
             color: #ffffff !important;
         }
         
-        /* Adjust footer and logo text colors outside the glass container */
-        .text-slate-400, .italic {
+        /* Adjust footer text color outside the glass container */
+        .italic, .text-slate-400:not(.glass-effect *) {
             color: rgba(255, 255, 255, 0.6) !important;
         }
 
-        /* Force all texts, labels, and links inside the glass container to be black */
-        .glass-effect h2,
-        .glass-effect p,
-        .glass-effect label,
+        /* Force all texts, labels, and links inside the glass container to be dark slate/black */
+        .glass-effect h2 {
+            color: #0f172a !important; /* Dark Slate-900 */
+        }
+        .glass-effect .text-slate-400:not(.text-red-600) {
+            color: #475569 !important; /* Slate-600 */
+        }
+        .glass-effect label {
+            color: #334155 !important; /* Slate-700 */
+        }
         .glass-effect span,
         .glass-effect a:not(.btn-custom-back):not(.btn-custom-action),
         .glass-effect button.toggle-password {
-            color: #000000 !important;
+            color: #334155 !important;
+        }
+        .glass-effect a:not(.btn-custom-back):not(.btn-custom-action):hover {
+            color: #0f172a !important;
         }
 
         /* Custom Button Styling - BACK */

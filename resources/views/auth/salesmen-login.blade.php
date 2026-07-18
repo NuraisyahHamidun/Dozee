@@ -13,9 +13,26 @@
             color: #ffffff !important;
         }
         
-        /* Adjust footer and logo text colors outside the glass container */
-        .text-slate-400, .italic {
+        /* Adjust footer text color outside the glass container */
+        .italic, .text-slate-400:not(.glass-effect *) {
             color: rgba(255, 255, 255, 0.75) !important;
+        }
+
+        /* Ensure maximum readability of text inside the login card */
+        .glass-effect h2 {
+            color: #0f172a !important; /* Dark Slate-900 */
+        }
+        .glass-effect .text-slate-400:not(.text-red-600) {
+            color: #475569 !important; /* Slate-600 */
+        }
+        .glass-effect label {
+            color: #334155 !important; /* Slate-700 */
+        }
+        .glass-effect a:not(.bg-slate-900):not(.bg-indigo-600) {
+            color: #475569 !important;
+        }
+        .glass-effect a:hover {
+            color: #0f172a !important;
         }
     </style>
     <div class="mb-8">
